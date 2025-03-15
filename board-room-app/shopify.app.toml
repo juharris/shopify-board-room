@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "9c3f796e6d58f010b42928232396a3ba"
-application_url = "https://chargers-communication-ata-raleigh.trycloudflare.com"
+application_url = "https://riders-patents-situated-bulletin.trycloudflare.com"
 embedded = true
 name = "board-room-app"
 handle = "board-room-app"
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://chargers-communication-ata-raleigh.trycloudflare.com/auth/callback",
-  "https://chargers-communication-ata-raleigh.trycloudflare.com/auth/shopify/callback",
-  "https://chargers-communication-ata-raleigh.trycloudflare.com/api/auth/callback"
+  "https://riders-patents-situated-bulletin.trycloudflare.com/auth/callback",
+  "https://riders-patents-situated-bulletin.trycloudflare.com/auth/shopify/callback",
+  "https://riders-patents-situated-bulletin.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]
