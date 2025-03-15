@@ -55,7 +55,7 @@ export async function action({ request, params }) {
 
   if (data.action === "delete") {
     await db.qRCode.delete({ where: { id: Number(params.id) } });
-    return redirect("/app");
+    return redirect("/app/qrcodes");
   }
 
   const errors = validateQRCode(data);

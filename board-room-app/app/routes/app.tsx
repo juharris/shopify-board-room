@@ -21,10 +21,18 @@ export default function App() {
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
       <NavMenu>
-        <Link to="/app" rel="home">
-          Home
+        <Link to="/app/chat">
+          Chat
         </Link>
-        <Link to="/app/additional">Additional page</Link>
+        <Link to="/app" rel="home">
+          (dev) Remix app template
+        </Link>
+        <Link to="/app/qrcodes">
+          (dev) QR Codes
+        </Link>
+        <Link to="/app/additional">
+          (dev) Additional page
+        </Link>
       </NavMenu>
       <Outlet />
     </AppProvider>
