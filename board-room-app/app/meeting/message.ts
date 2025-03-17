@@ -1,11 +1,14 @@
 export enum MeetingMessageRole {
   Assistant = 'assistant',
   User = 'user',
-  System = 'system'
+  System = 'system',
+  Tool = 'tool',
 }
 
 export class MeetingMessage {
   private _id: string = Math.random().toString(36).substring(2)
+
+  public tool_call_id: string | undefined = undefined
 
   // eslint-disable-next-line no-useless-constructor
   public constructor(
