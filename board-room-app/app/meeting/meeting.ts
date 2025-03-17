@@ -74,6 +74,8 @@ export class Meeting {
     switch (toolCall.function.name) {
       case 'select_next_speaker':
         // const speaker = toolCall.function.arguments.speaker
+        // TODO If the next speaker is not the user, get the model to say something from the persona.
+        // Otherwise, let the user say something.
         break
     }
 
