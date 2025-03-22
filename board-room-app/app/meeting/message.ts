@@ -20,4 +20,8 @@ export class MeetingMessage {
   public get id(): string {
     return this._id;
   }
+
+  public withContent(content: string): MeetingMessage {
+    return new MeetingMessage(this.role, content);
+  }
 }
