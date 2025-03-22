@@ -1,3 +1,5 @@
+import type { MeetingMember } from "./member";
+
 export enum MeetingMessageRole {
   Assistant = 'assistant',
   User = 'user',
@@ -14,6 +16,7 @@ export class MeetingMessage {
   public constructor(
     public role: MeetingMessageRole,
     public content: string,
+    public member: MeetingMember,
   ) {
   }
 
@@ -22,6 +25,6 @@ export class MeetingMessage {
   }
 
   public withContent(content: string): MeetingMessage {
-    return new MeetingMessage(this.role, content);
+    return new MeetingMessage(this.role, content, this.member);
   }
 }

@@ -3,8 +3,10 @@ import {
   BlockStack,
   Button,
   Card,
+  Divider,
   Layout,
   Page,
+  Scrollable,
   Text,
   TextField,
 } from "@shopify/polaris";
@@ -14,11 +16,14 @@ import { MeetingMessage, MeetingMessageRole, } from "app/meeting/message";
 import { Ollama } from 'ollama';
 import { useState } from 'react';
 
+import styles from '../styles/chat.module.css';
+import { MeetingMember } from "app/meeting/member";
+
 
 export default function ChatPage() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<MeetingMessage[]>([]);
-
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   // TODO Allow the host to be configurable.
   const client = new Ollama({
     // host: 'http://localhost:11434',
@@ -26,10 +31,13 @@ export default function ChatPage() {
 
   // TODO Add model selector.
   const meeting = new Meeting(client, 'llama3.2');
+  const userMember = new MeetingMember("You", "user");
 
   const sendMessage = async (text: string) => {
-    const message = new MeetingMessage(MeetingMessageRole.User, text)
-    const responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, "")
+    const message = new MeetingMessage(MeetingMessageRole.User, text, userMember)
+
+    // TODO Let the meeting create the response message.
+    const responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, "", new MeetingMember("Assistant", "assistant"))
     const responseIndex = messages.length + 1
     setMessages(prev => [...prev, message, responseMessage])
 
@@ -50,14 +58,16 @@ export default function ChatPage() {
       console.error(error)
       setMessages(prev => [
         ...prev,
-        new MeetingMessage(MeetingMessageRole.Assistant, "An error occurred while generating the response. " + error),
+        new MeetingMessage(MeetingMessageRole.Assistant, "An error occurred while generating the response. " + error, new MeetingMember("Error", "error")),
       ])
     }
   }
 
   const handleMessageChange = async (value: string) => {
     // TODO Allow Shift+Enter to not send the message.
+    console.debug("handleMessageChange", value);
     if (value.endsWith("\n")) {
+      console.debug("Sending message");
       setMessage("");
       await sendMessage(value.trimEnd());
     } else {
@@ -74,21 +84,52 @@ export default function ChatPage() {
     <Page>
       <TitleBar title="Chat" />
       <Layout>
-        <Layout.Section>
-          <Button onClick={handleRestartMeeting} variant="primary" disabled={messages.length === 0}>
-            New Meeting
+        <Layout.Section variant="oneThird">
+          <Button variant="primary"
+            onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+          >
+            {showAdvancedOptions ? "Hide Advanced Options" : "🤓 Advanced Options"}
           </Button>
         </Layout.Section>
-        <Layout.Section>
+        <Layout.Section variant="oneThird">
+          {messages.length > 0 && (
+            <Button onClick={handleRestartMeeting} variant="primary">
+              🔄 New Meeting
+            </Button>
+          )}
+        </Layout.Section>
+
+        {showAdvancedOptions && (
+          <Layout.Section variant="fullWidth">
+            <Card>
+              <Scrollable className={styles.options} shadow focusable>
+                <Text as="h2" variant="headingMd">
+                  🤓 Advanced Options
+                </Text>
+                {/* TODO Add section for configuring the meeting members. */}
+              </Scrollable>
+            </Card>
+          </Layout.Section>
+        )}
+
+        <Layout.Section variant="fullWidth">
           <Card>
             <BlockStack gap="300">
-              {messages.map((message, index) => (
-                <Text key={index} as="p" variant="bodyMd">
-                  {message.role}: {message.content}
-                </Text>
-              ))}
+              <Scrollable className={styles.messages} shadow focusable>
+                <BlockStack gap="100">
+                  {messages.map((message, index) => (
+                    // TODO Style messages.
+                    // TODO Left align messages from the user.
+                    // TODO Right align other messages.
+                    <Text key={index} as="p" variant="bodyMd">
+                      <b>{message.member.name}</b>: {message.content}
+                    </Text>
+                  ))}
+                </BlockStack>
+              </Scrollable>
+              <Divider />
               <TextField
-                label="Message"
+                label=""
                 value={message}
                 onChange={handleMessageChange}
                 multiline={3}
