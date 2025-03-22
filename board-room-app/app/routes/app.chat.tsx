@@ -1,57 +1,51 @@
+import { TitleBar } from "@shopify/app-bridge-react";
 import {
+  BlockStack,
+  Button,
   Card,
   Layout,
   Page,
   Text,
-  BlockStack,
   TextField,
 } from "@shopify/polaris";
-import { TitleBar } from "@shopify/app-bridge-react";
-// import ollama from 'ollama'
+import type { StreamingCallback } from "app/meeting/meeting";
+import { Meeting } from "app/meeting/meeting";
+import { MeetingMessage, MeetingMessageRole, } from "app/meeting/message";
 import { Ollama } from 'ollama';
 import { useState } from 'react';
-import { MeetingMessage, MeetingMessageRole, } from "app/meeting/message";
 
 
 export default function ChatPage() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<MeetingMessage[]>([]);
-  /*
-  fetch('http://localhost:11434')
-    .then(async res => await res.text())
-    .then(console.log)
-    .catch(err => console.error(err))
-  */
 
   // TODO Allow the host to be configurable.
   const client = new Ollama({
     // host: 'http://localhost:11434',
   });
-  const sendMessage = async (model: string, text: string) => {
+
+  // TODO Add model selector.
+  const meeting = new Meeting(client, 'llama3.2');
+
+  const sendMessage = async (text: string) => {
     const message = new MeetingMessage(MeetingMessageRole.User, text)
-    const responseIndex = messages.length + 1;
     const responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, "")
-    setMessages(prev => [...prev, message, responseMessage]);
+    const responseIndex = messages.length + 1
+    setMessages(prev => [...prev, message, responseMessage])
+
+    const streamingCallback: StreamingCallback = (message, newContent) => {
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const responseMessage = newMessages[responseIndex]
+        newMessages[responseIndex] = responseMessage.withContent(responseMessage.content + newContent)
+        return newMessages;
+      });
+    }
 
     // TODO Add instructions with other board member profiles and use tool calling,
     // perhaps to select the board member to speak next.
     try {
-      const response = await client.chat({
-        model,
-        messages: [message],
-        stream: true,
-      })
-      for await (const chunk of response) {
-        // console.debug("chunk", chunk)
-        const newContent = chunk.message.content
-        setMessages(prev => {
-          const newMessages = [...prev];
-          const responseMessage = newMessages[responseIndex]
-          newMessages[responseIndex] = responseMessage.withContent(responseMessage.content + newContent)
-          return newMessages;
-        });
-      }
-      //*/
+      await meeting.sendMessage(message, streamingCallback)
     } catch (error) {
       console.error(error)
       setMessages(prev => [
@@ -65,16 +59,26 @@ export default function ChatPage() {
     // TODO Allow Shift+Enter to not send the message.
     if (value.endsWith("\n")) {
       setMessage("");
-      await sendMessage('llama3.2', value.trimEnd());
+      await sendMessage(value.trimEnd());
     } else {
       setMessage(value);
     }
+  }
+
+  const handleRestartMeeting = () => {
+    meeting.restart()
+    setMessages([])
   }
 
   return (
     <Page>
       <TitleBar title="Chat" />
       <Layout>
+        <Layout.Section>
+          <Button onClick={handleRestartMeeting} variant="primary" disabled={messages.length === 0}>
+            New Meeting
+          </Button>
+        </Layout.Section>
         <Layout.Section>
           <Card>
             <BlockStack gap="300">

@@ -34,7 +34,7 @@ class ChatRunner {
       rl.write(chunk)
     }
 
-    const meeting = new Meeting(ollama, initialModel, cb)
+    const meeting = new Meeting(ollama, initialModel)
 
     let isRunning = true
     while (isRunning) {
@@ -52,7 +52,7 @@ class ChatRunner {
         break
       }
 
-      await meeting.sendMessage(userMessage)
+      await meeting.sendMessage(userMessage, cb)
       rl.write("\n\n")
     }
 

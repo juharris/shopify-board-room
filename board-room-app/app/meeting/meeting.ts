@@ -1,4 +1,4 @@
-import type { Ollama, Tool, ToolCall } from "ollama";
+import type { Message, Ollama, Tool, ToolCall } from "ollama";
 import { MeetingMessage, MeetingMessageRole } from "./message";
 
 export type StreamingCallback = (message: MeetingMessage, chunk: string) => void;
@@ -29,27 +29,31 @@ const TOOLS: Tool[] = [
 ]
 
 export class Meeting {
-  private messages: MeetingMessage[] = [...personas]
+  private _messages: MeetingMessage[] = []
 
   // eslint-disable-next-line no-useless-constructor
   constructor(
     private ollama: Ollama,
-    private initialModel: string,
-    private cb: StreamingCallback,
-  ) { }
+    private nextModel: string,
+  ) {
+    this.restart()
+  }
 
-  public async sendMessage(message: MeetingMessage) {
-    this.messages.push(message)
+  public async sendMessage(
+    message: MeetingMessage,
+    cb: StreamingCallback,
+  ) {
+    this._messages.push(message)
     const response = await this.ollama.chat({
-      model: this.initialModel,
-      messages: this.messages,
+      model: this.nextModel,
+      messages: Meeting.convertMessages(this._messages),
       stream: true,
-      tools: TOOLS
+      // tools: TOOLS,
     })
     let responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, "")
-    this.messages.push(responseMessage)
+    this._messages.push(responseMessage)
     for await (const chunk of response) {
-      console.debug("chunk:", chunk)
+      // console.debug("chunk:", chunk)
       if (chunk.message.tool_calls) {
         for (const toolCall of chunk.message.tool_calls) {
           await this.handleToolCall(toolCall, "TODO id")
@@ -57,7 +61,7 @@ export class Meeting {
       }
       if (!chunk.done && chunk.message.role === 'assistant') {
         responseMessage.content += chunk.message.content
-        this.cb(responseMessage, chunk.message.content)
+        cb(responseMessage, chunk.message.content)
       } else {
         if (chunk.message.content) {
           throw new Error(`Unexpected content when done. Chunk: ${chunk}`)
@@ -66,10 +70,21 @@ export class Meeting {
     }
   }
 
+  public restart() {
+    this._messages = [...personas]
+  }
+
+  private static convertMessages(messages: MeetingMessage[]): Message[] {
+    return messages.map(m => ({
+      role: m.role,
+      content: m.content,
+    }))
+  }
+
   private async handleToolCall(toolCall: ToolCall, toolCallId: string) {
     // TODO Use tool call ID?
     // Is this role right?
-    this.messages.push(new MeetingMessage(MeetingMessageRole.Tool, JSON.stringify(toolCall.function.arguments)))
+    this._messages.push(new MeetingMessage(MeetingMessageRole.Tool, JSON.stringify(toolCall.function.arguments)))
 
     switch (toolCall.function.name) {
       case 'select_next_speaker':
@@ -81,6 +96,6 @@ export class Meeting {
 
     const m = new MeetingMessage(MeetingMessageRole.Tool, "TODO result")
     m.tool_call_id = toolCallId
-    this.messages.push(m)
+    this._messages.push(m)
   }
 }
