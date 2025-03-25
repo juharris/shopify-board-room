@@ -159,9 +159,13 @@ export default function ChatPage() {
           </Button>
         </Layout.Section>
         <Layout.Section variant="oneThird">
-          {messages.length > (options.ai.initialMessages?.length ?? 0) && (
+          {messages.length > (options.ai.initialMessages?.length ?? 0) ? (
             <Button onClick={handleRestartMeeting} variant="primary">
               🔄 New Meeting
+            </Button>
+          ) : (
+            <Button onClick={() => sendMessage("Let's begin.")} variant="primary">
+              🆕 Start Meeting
             </Button>
           )}
         </Layout.Section>
