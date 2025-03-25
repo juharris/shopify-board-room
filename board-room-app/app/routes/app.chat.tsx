@@ -7,65 +7,132 @@ import {
   Layout,
   Page,
   Scrollable,
+  Select,
   Text,
   TextField,
 } from "@shopify/polaris";
 import type { StreamingCallback } from "app/meeting/meeting";
 import { Meeting } from "app/meeting/meeting";
 import { MeetingMessage, MeetingMessageRole, } from "app/meeting/message";
-import { Ollama } from 'ollama';
-import { useState } from 'react';
+import { type ListResponse, Ollama, type Tool } from 'ollama';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import styles from '../styles/chat.module.css';
 import { MeetingMember } from "app/meeting/member";
 
+export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
+
+interface StoreChatOptions {
+  ai: {
+    ollama: {
+      host: string;
+      model: string;
+      tools?: Tool[]
+    },
+    initialMessages?: MeetingMessage[]
+  }
+}
 
 export default function ChatPage() {
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<MeetingMessage[]>([]);
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-  // TODO Allow the host to be configurable.
-  const client = new Ollama({
-    // host: 'http://localhost:11434',
-  });
+  const systemMember = new MeetingMember("System", 'system');
+  const userMember = new MeetingMember("You", 'user');
 
-  // TODO Add model selector.
-  const meeting = new Meeting(client, 'llama3.2');
-  const userMember = new MeetingMember("You", "user");
+  // TODO Load from IndexedDB and allow configuring in the UI.
+  const initialOptions: StoreChatOptions = {
+    ai: {
+      ollama: {
+        host: 'http://localhost:11434',
+        model: 'llama3.2:latest',
+        tools: undefined,
+        /* TODO Enable later when we handle the tool calls.
+        [
+          {
+            type: 'function',
+            function: {
+              name: 'select_next_speaker',
+              description: 'Select the next speaker in the conversation. It could be the real person, or one of the AI personas.',
+              parameters: {
+                type: 'object',
+                required: ['speaker'],
+                properties: {
+                  speaker: {
+                    type: 'string',
+                    description: 'The next speaker in the conversation. It could be the real person, or one of the AI personas.',
+                    // TODO Contrarian / devil's advocate.
+                    enum: ['real_user', 'CEO', 'CFO', 'COO',]
+                  },
+                },
+              },
+            },
+          },
+        ],
+        */
+      },
+      initialMessages: [
+        new MeetingMessage(MeetingMessageRole.System,
+          "This conversation is a meeting which includes a real person chatting with fake AI personas about how to manage their Shopify store. " +
+          "The AI personas may chat with each and ask each other questions or ask the real person questions.",
+          systemMember),
+      ],
+    },
+  }
+
+  const [options, setOptions] = useState<StoreChatOptions>(initialOptions)
+  const [ollamaModels, setOllamaModels] = useState<ListResponse | undefined>(undefined)
+  const [message, setMessage] = useState('')
+  const [messages, setMessages] = useState<MeetingMessage[]>([])
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
+
+  // TODO Allow changing the host during the meeting.
+  const client = useMemo(() => new Ollama({
+    host: options.ai.ollama.host,
+  }), [options.ai.ollama.host])
+
+  // TODO Allow changing the model during the meeting.
+  const meeting = useMemo(() => new Meeting(client, options.ai.ollama.model), [client, options.ai.ollama.model])
+
+  const handleRestartMeeting = useCallback(() => {
+    meeting.restart()
+    if (options.ai.initialMessages) {
+      meeting.addMessages(options.ai.initialMessages)
+    }
+    setMessages([...meeting.messages])
+  }, [meeting, options.ai.initialMessages])
+
+  // Run this once when the page loads.
+  useEffect(() => {
+    handleRestartMeeting()
+
+    const fetchOllamaModels = async () => {
+      setOllamaModels(await client.list())
+    }
+    fetchOllamaModels()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const sendMessage = async (text: string) => {
     const message = new MeetingMessage(MeetingMessageRole.User, text, userMember)
 
-    // TODO Let the meeting create the response message.
-    const responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, "", new MeetingMember("Assistant", "assistant"))
-    const responseIndex = messages.length + 1
-    setMessages(prev => [...prev, message, responseMessage])
+    setMessages(prev => [...prev, message])
 
-    const streamingCallback: StreamingCallback = (message, newContent) => {
-      setMessages(prev => {
-        const newMessages = [...prev];
-        const responseMessage = newMessages[responseIndex]
-        newMessages[responseIndex] = responseMessage.withContent(responseMessage.content + newContent)
-        return newMessages;
-      });
+    const streamingCallback: StreamingCallback = (_message, _newContent) => {
+      // TODO Ignore if they're for another meeting that has ended after restarting.
+      setMessages([...meeting.messages])
+      // TODO Automatically scroll to the bottom of the messages if already scrolled to the bottom.
     }
 
-    // TODO Add instructions with other board member profiles and use tool calling,
-    // perhaps to select the board member to speak next.
     try {
-      await meeting.sendMessage(message, streamingCallback)
+      await meeting.sendMessage(message, options.ai.ollama.tools, streamingCallback)
     } catch (error) {
       console.error(error)
-      setMessages(prev => [
-        ...prev,
-        new MeetingMessage(MeetingMessageRole.Assistant, "An error occurred while generating the response. " + error, new MeetingMember("Error", "error")),
-      ])
+      meeting.addMessages([new MeetingMessage(MeetingMessageRole.Assistant, "An error occurred while generating the response. " + error, new MeetingMember("Error", "error"))])
+      setMessages([...meeting.messages])
     }
   }
 
   const handleMessageChange = async (value: string) => {
     // TODO Allow Shift+Enter to not send the message.
-    console.debug("handleMessageChange", value);
+    // console.debug("handleMessageChange", value);
     if (value.endsWith("\n")) {
       console.debug("Sending message");
       setMessage("");
@@ -75,14 +142,14 @@ export default function ChatPage() {
     }
   }
 
-  const handleRestartMeeting = () => {
-    meeting.restart()
-    setMessages([])
+  function handleModelChange(selected: string, id: string): void {
+    options.ai.ollama.model = selected
+    setOptions({ ...options })
   }
 
   return (
     <Page>
-      <TitleBar title="Chat" />
+      <TitleBar title={PRODUCT_NAME} />
       <Layout>
         <Layout.Section variant="oneThird">
           <Button variant="primary"
@@ -92,7 +159,7 @@ export default function ChatPage() {
           </Button>
         </Layout.Section>
         <Layout.Section variant="oneThird">
-          {messages.length > 0 && (
+          {messages.length > (options.ai.initialMessages?.length ?? 0) && (
             <Button onClick={handleRestartMeeting} variant="primary">
               🔄 New Meeting
             </Button>
@@ -106,7 +173,33 @@ export default function ChatPage() {
                 <Text as="h2" variant="headingMd">
                   🤓 Advanced Options
                 </Text>
+
+                <Text as="p" variant="bodyMd">
+                  To allow requests to your local Ollama server, run:
+                </Text>
+                <pre>OLLAMA_ORIGINS='{window.location.origin}' ollama serve</pre>
+
+                {ollamaModels?.models.length && (
+                  <div>
+                    <Text as="p" variant="bodyMd">
+                      ✅ Found models hosted on your local Ollama server.
+                    </Text>
+                    <Select
+                      label="Ollama Model"
+                      options={ollamaModels?.models.map(model => ({ label: model.name, value: model.name })) ?? []}
+                      onChange={handleModelChange}
+                      value={options.ai.ollama.model}
+                    />
+                  </div>
+                )}
+
                 {/* TODO Add section for configuring the meeting members. */}
+                < Text as="h3" variant="headingSm">
+                  Current Configuration
+                </Text>
+                <pre>
+                  {JSON.stringify(options, null, 2)}
+                </pre>
               </Scrollable>
             </Card>
           </Layout.Section>
@@ -121,8 +214,9 @@ export default function ChatPage() {
                     // TODO Style messages.
                     // TODO Left align messages from the user.
                     // TODO Right align other messages.
-                    <Text key={index} as="p" variant="bodyMd">
-                      <b>{message.member.name}</b>: {message.content}
+                    // TODO Render content as markdown.
+                    <Text key={`${index}-${message.content.length}`} as="p" variant="bodyMd">
+                      <b>{message.from.name}</b>: {message.content}
                     </Text>
                   ))}
                 </BlockStack>
@@ -155,6 +249,6 @@ export default function ChatPage() {
         </Layout.Section>
         */}
       </Layout>
-    </Page>
+    </Page >
   );
 }

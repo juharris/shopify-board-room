@@ -1,32 +1,13 @@
 import type { Message, Ollama, Tool, ToolCall } from "ollama";
 import { MeetingMessage, MeetingMessageRole } from "./message";
+import { MeetingMember } from "./member";
 
+/**
+ * Callback for streaming the response from the AI.
+ * @param message The latest version of the generated message.
+ * @param chunk New text that was appended to the end of the message's content.
+ */
 export type StreamingCallback = (message: MeetingMessage, chunk: string) => void;
-
-const personas: MeetingMessage[] = [
-  new MeetingMessage(MeetingMessageRole.System, "This conversation is a meeting which includes a real person chatting with fake AI personas about how to manage their Shopify store.")
-]
-
-const TOOLS: Tool[] = [
-  {
-    type: 'function',
-    function: {
-      name: 'select_next_speaker',
-      description: 'Select the next speaker in the conversation. It could be the real person, or one of the AI personas.',
-      parameters: {
-        type: 'object',
-        required: ['speaker'],
-        properties: {
-          speaker: {
-            type: 'string',
-            description: 'The next speaker in the conversation. It could be the real person, or one of the AI personas.',
-            enum: ['real_user', 'CEO', 'CFO', 'COO',]
-          }
-        },
-      }
-    }
-  }
-]
 
 export class Meeting {
   private _messages: MeetingMessage[] = []
@@ -39,8 +20,17 @@ export class Meeting {
     this.restart()
   }
 
+  public get messages() {
+    return this._messages
+  }
+
+  public addMessages(messages: MeetingMessage[]) {
+    this._messages.push(...messages)
+  }
+
   public async sendMessage(
     message: MeetingMessage,
+    tools: Tool[] | undefined,
     cb: StreamingCallback,
   ) {
     this._messages.push(message)
@@ -48,15 +38,15 @@ export class Meeting {
       model: this.nextModel,
       messages: Meeting.convertMessages(this._messages),
       stream: true,
-      // tools: TOOLS,
+      tools,
     })
-    let responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, "")
+    let responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, "", new MeetingMember("Assistant", "assistant"))
     this._messages.push(responseMessage)
     for await (const chunk of response) {
       // console.debug("chunk:", chunk)
       if (chunk.message.tool_calls) {
         for (const toolCall of chunk.message.tool_calls) {
-          await this.handleToolCall(toolCall, "TODO id")
+          await this.handleToolCall(message, toolCall, "TODO id")
         }
       }
       if (!chunk.done && chunk.message.role === 'assistant') {
@@ -71,7 +61,7 @@ export class Meeting {
   }
 
   public restart() {
-    this._messages = [...personas]
+    this._messages = []
   }
 
   private static convertMessages(messages: MeetingMessage[]): Message[] {
@@ -81,10 +71,10 @@ export class Meeting {
     }))
   }
 
-  private async handleToolCall(toolCall: ToolCall, toolCallId: string) {
+  private async handleToolCall(message: MeetingMessage, toolCall: ToolCall, toolCallId: string) {
     // TODO Use tool call ID?
     // Is this role right?
-    this._messages.push(new MeetingMessage(MeetingMessageRole.Tool, JSON.stringify(toolCall.function.arguments)))
+    this._messages.push(new MeetingMessage(MeetingMessageRole.Tool, JSON.stringify(toolCall.function.arguments), message.from))
 
     switch (toolCall.function.name) {
       case 'select_next_speaker':
@@ -94,7 +84,7 @@ export class Meeting {
         break
     }
 
-    const m = new MeetingMessage(MeetingMessageRole.Tool, "TODO result")
+    const m = new MeetingMessage(MeetingMessageRole.Tool, "TODO result", message.from)
     m.tool_call_id = toolCallId
     this._messages.push(m)
   }

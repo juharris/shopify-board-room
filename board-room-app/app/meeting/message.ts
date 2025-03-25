@@ -16,7 +16,7 @@ export class MeetingMessage {
   public constructor(
     public role: MeetingMessageRole,
     public content: string,
-    public member: MeetingMember,
+    public from: MeetingMember,
   ) {
   }
 
@@ -25,6 +25,6 @@ export class MeetingMessage {
   }
 
   public withContent(content: string): MeetingMessage {
-    return new MeetingMessage(this.role, content, this.member);
+    return new MeetingMessage(this.role, content, this.from);
   }
 }
