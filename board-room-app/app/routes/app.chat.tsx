@@ -77,6 +77,7 @@ export default function ChatPage() {
     },
   }
 
+  const [errorLoadingOllamaModels, setErrorLoadingOllamaModels] = useState<unknown | undefined>(undefined)
   const [options, setOptions] = useState<StoreChatOptions>(initialOptions)
   const [ollamaModels, setOllamaModels] = useState<ListResponse | undefined>(undefined)
   const [message, setMessage] = useState('')
@@ -99,13 +100,21 @@ export default function ChatPage() {
     setMessages([...meeting.messages])
   }, [meeting, options.ai.initialMessages])
 
+  const fetchOllamaModels = async () => {
+    try {
+      const modelListResponse = await client.list()
+      setOllamaModels(modelListResponse)
+      setErrorLoadingOllamaModels(undefined)
+    } catch (error) {
+      console.error(error)
+      setErrorLoadingOllamaModels(error)
+    }
+  }
+
   // Run this once when the page loads.
   useEffect(() => {
     handleRestartMeeting()
 
-    const fetchOllamaModels = async () => {
-      setOllamaModels(await client.list())
-    }
     fetchOllamaModels()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -152,16 +161,9 @@ export default function ChatPage() {
       <TitleBar title={PRODUCT_NAME} />
       <Layout>
         <Layout.Section variant="oneThird">
-          <Button variant="primary"
-            onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-          >
-            {showAdvancedOptions ? "Hide Advanced Options" : "🤓 Advanced Options"}
-          </Button>
-        </Layout.Section>
-        <Layout.Section variant="oneThird">
           {messages.length > (options.ai.initialMessages?.length ?? 0) ? (
-            <Button onClick={handleRestartMeeting} variant="primary">
-              🔄 New Meeting
+            <Button onClick={handleRestartMeeting} variant="secondary">
+              🧹 Clear Meeting
             </Button>
           ) : (
             <Button onClick={() => sendMessage("Let's begin.")} variant="primary">
@@ -169,6 +171,25 @@ export default function ChatPage() {
             </Button>
           )}
         </Layout.Section>
+        <Layout.Section variant="oneThird">
+          <Button variant="primary"
+            onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+          >
+            {showAdvancedOptions ? "Hide Advanced Options" : "🤓 Advanced Options"}
+          </Button>
+        </Layout.Section>
+
+        {errorLoadingOllamaModels !== undefined && (
+          <Layout.Section variant="fullWidth">
+            <Card>
+              <Text as="p" variant="bodyMd">
+                ❌ Error loading list of Ollama models. Ensure that Ollama is running.
+                See the Advanced Options for more information.
+              </Text>
+              <Button onClick={() => fetchOllamaModels()}>Try again</Button>
+            </Card>
+          </Layout.Section>
+        )}
 
         {showAdvancedOptions && (
           <Layout.Section variant="fullWidth">
@@ -182,6 +203,12 @@ export default function ChatPage() {
                   To allow requests to your local Ollama server, run:
                 </Text>
                 <pre>OLLAMA_ORIGINS='{window.location.origin}' ollama serve</pre>
+
+                {errorLoadingOllamaModels !== undefined && (
+                  <Text as="p" variant="bodyMd">
+                    ❌ Error loading list of Ollama models. Ensure that Ollama is running.
+                  </Text>
+                )}
 
                 {ollamaModels?.models.length && (
                   <div>
