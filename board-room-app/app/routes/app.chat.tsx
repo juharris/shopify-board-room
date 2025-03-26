@@ -12,13 +12,14 @@ import {
   TextField,
 } from "@shopify/polaris";
 import type { StreamingCallback } from "app/meeting/meeting";
-import { Meeting } from "app/meeting/meeting";
+import { Meeting, REAL_USER_LABEL } from "app/meeting/meeting";
 import { MeetingMessage, MeetingMessageRole, } from "app/meeting/message";
 import { type ListResponse, Ollama, type Tool } from 'ollama';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import styles from '../styles/chat.module.css';
 import { MeetingMember } from "app/meeting/member";
+import ChatMessage from "app/components/ChatMessage";
 
 export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
 
@@ -43,14 +44,13 @@ export default function ChatPage() {
       ollama: {
         host: 'http://localhost:11434',
         model: 'llama3.2:latest',
-        tools: undefined,
-        /* TODO Enable later when we handle the tool calls.
-        [
+        tools: [
           {
             type: 'function',
             function: {
               name: 'select_next_speaker',
-              description: 'Select the next speaker in the conversation. It could be the real person, or one of the AI personas.',
+              description: "Select the next speaker in the conversation. It could be the real person (i.e., the real_user) or one of the AI personas." +
+                " After an AI persona sends a message, then they may suggest another persona to speak next or ask the real person for their input.",
               parameters: {
                 type: 'object',
                 required: ['speaker'],
@@ -58,20 +58,26 @@ export default function ChatPage() {
                   speaker: {
                     type: 'string',
                     description: 'The next speaker in the conversation. It could be the real person, or one of the AI personas.',
-                    // TODO Contrarian / devil's advocate.
-                    enum: ['real_user', 'CEO', 'CFO', 'COO',]
+                    enum: [
+                      REAL_USER_LABEL,
+                      'CEO',
+                      'CFO',
+                      'COO',
+                      'contrarian',
+                    ]
                   },
                 },
               },
             },
           },
         ],
-        */
       },
       initialMessages: [
         new MeetingMessage(MeetingMessageRole.System,
           "This conversation is a meeting which includes a real person chatting with fake AI personas about how to manage their Shopify store. " +
-          "The AI personas may chat with each and ask each other questions or ask the real person questions.",
+          "The AI personas may chat with each and ask each other questions or ask the real person questions." +
+          "If the real person starts with something simple such as \"Let's begin.\", " +
+          "then the AI personas should start the conversation amongst themselves for a few short messages before asking the real person for their input.",
           systemMember),
       ],
     },
@@ -97,7 +103,7 @@ export default function ChatPage() {
     if (options.ai.initialMessages) {
       meeting.addMessages(options.ai.initialMessages)
     }
-    setMessages([...meeting.messages])
+    setMessages([...meeting.chatMessages])
   }, [meeting, options.ai.initialMessages])
 
   const fetchOllamaModels = async () => {
@@ -126,7 +132,7 @@ export default function ChatPage() {
 
     const streamingCallback: StreamingCallback = (_message, _newContent) => {
       // TODO Ignore if they're for another meeting that has ended after restarting.
-      setMessages([...meeting.messages])
+      setMessages([...meeting.chatMessages])
       // TODO Automatically scroll to the bottom of the messages if already scrolled to the bottom.
     }
 
@@ -135,7 +141,7 @@ export default function ChatPage() {
     } catch (error) {
       console.error(error)
       meeting.addMessages([new MeetingMessage(MeetingMessageRole.Assistant, "An error occurred while generating the response. " + error, new MeetingMember("Error", "error"))])
-      setMessages([...meeting.messages])
+      setMessages([...meeting.chatMessages])
     }
   }
 
@@ -242,13 +248,7 @@ export default function ChatPage() {
               <Scrollable className={styles.messages} shadow focusable>
                 <BlockStack gap="100">
                   {messages.map((message, index) => (
-                    // TODO Style messages.
-                    // TODO Left align messages from the user.
-                    // TODO Right align other messages.
-                    // TODO Render content as markdown.
-                    <Text key={`${index}-${message.content.length}`} as="p" variant="bodyMd">
-                      <b>{message.from.name}</b>: {message.content}
-                    </Text>
+                    <ChatMessage key={`${index}-${message.content.length}`} message={message} />
                   ))}
                 </BlockStack>
               </Scrollable>

@@ -1,16 +1,22 @@
-import type { Message, Ollama, Tool, ToolCall } from "ollama";
-import { MeetingMessage, MeetingMessageRole } from "./message";
-import { MeetingMember } from "./member";
+import type { ChatResponse, Ollama, Message as OllamaMessage, Tool, ToolCall } from 'ollama'
+import { MeetingMember } from './member'
+import { MeetingMessage, MeetingMessageRole } from './message'
 
 /**
  * Callback for streaming the response from the AI.
  * @param message The latest version of the generated message.
  * @param chunk New text that was appended to the end of the message's content.
  */
-export type StreamingCallback = (message: MeetingMessage, chunk: string) => void;
+export type StreamingCallback = (
+  message: MeetingMessage | undefined,
+  chunk: string | undefined,
+) => void;
+
+export const REAL_USER_LABEL = 'real_user'
 
 export class Meeting {
-  private _messages: MeetingMessage[] = []
+  private _messages: (MeetingMessage | OllamaMessage)[] = []
+  private _nextSpeaker: string = "Assistant"
 
   // eslint-disable-next-line no-useless-constructor
   constructor(
@@ -20,8 +26,8 @@ export class Meeting {
     this.restart()
   }
 
-  public get messages() {
-    return this._messages
+  public get chatMessages() {
+    return this._messages.filter(m => m instanceof MeetingMessage) as MeetingMessage[]
   }
 
   public addMessages(messages: MeetingMessage[]) {
@@ -34,58 +40,97 @@ export class Meeting {
     cb: StreamingCallback,
   ) {
     this._messages.push(message)
-    const response = await this.ollama.chat({
-      model: this.nextModel,
-      messages: Meeting.convertMessages(this._messages),
-      stream: true,
-      tools,
-    })
-    let responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, "", new MeetingMember("Assistant", "assistant"))
-    this._messages.push(responseMessage)
-    for await (const chunk of response) {
-      // console.debug("chunk:", chunk)
-      if (chunk.message.tool_calls) {
-        for (const toolCall of chunk.message.tool_calls) {
-          await this.handleToolCall(message, toolCall, "TODO id")
+    await this.generateResponses(message, tools, cb)
+  }
+
+  public async generateResponses(
+    message: MeetingMessage,
+    tools: Tool[] | undefined,
+    cb: StreamingCallback,
+  ) {
+    const maxLoopCount = 8
+    let loopCount = 0
+    while (++loopCount < maxLoopCount && this._nextSpeaker !== REAL_USER_LABEL) {
+      const messages = Meeting.convertMessages(this._messages)
+      console.debug("messages:", messages)
+      const response = await this.ollama.chat({
+        model: this.nextModel,
+        messages,
+        stream: true,
+        tools,
+      })
+      let responseMessage: MeetingMessage | undefined = undefined
+
+      for await (const chunk of response) {
+        console.debug("chunk:", chunk)
+        if (chunk.message.tool_calls) {
+          for (const toolCall of chunk.message.tool_calls) {
+            await this.handleToolCall(message, chunk, toolCall)
+            cb(responseMessage, undefined)
+          }
+
+          responseMessage = undefined
         }
-      }
-      if (!chunk.done && chunk.message.role === 'assistant') {
-        responseMessage.content += chunk.message.content
-        cb(responseMessage, chunk.message.content)
-      } else {
-        if (chunk.message.content) {
-          throw new Error(`Unexpected content when done. Chunk: ${chunk}`)
+
+        if (chunk.message.role === 'assistant' && chunk.message.content) {
+          if (!responseMessage) {
+            responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, chunk.message.content, new MeetingMember(this._nextSpeaker, this._nextSpeaker))
+            this._messages.push(responseMessage)
+          } else {
+            responseMessage.content += chunk.message.content
+          }
+          cb(responseMessage, chunk.message.content)
         }
+
+        // if (!chunk.done && chunk.message.role === 'assistant') {
+        // } else {
+        //   if (chunk.message.content) {
+        //     throw new Error(`Unexpected content when done. Chunk: ${JSON.stringify(chunk)}`)
+        //   }
+        // }
       }
     }
+
+    this._nextSpeaker = REAL_USER_LABEL
   }
 
   public restart() {
     this._messages = []
   }
 
-  private static convertMessages(messages: MeetingMessage[]): Message[] {
-    return messages.map(m => ({
-      role: m.role,
-      content: m.content,
-    }))
+  private static convertMessages(messages: (MeetingMessage | OllamaMessage)[]): OllamaMessage[] {
+    return messages.map(m => {
+      if (m instanceof MeetingMessage) {
+        return {
+          role: m.role,
+          content: `${m.from.name}: ${m.content}`,
+        }
+      }
+      return m
+    })
   }
 
-  private async handleToolCall(message: MeetingMessage, toolCall: ToolCall, toolCallId: string) {
+  private async handleToolCall(message: MeetingMessage, response: ChatResponse, toolCall: ToolCall) {
     // TODO Use tool call ID?
     // Is this role right?
-    this._messages.push(new MeetingMessage(MeetingMessageRole.Tool, JSON.stringify(toolCall.function.arguments), message.from))
+    this._messages.push(response.message)
+    let output: string | undefined = undefined
 
     switch (toolCall.function.name) {
       case 'select_next_speaker':
-        // const speaker = toolCall.function.arguments.speaker
-        // TODO If the next speaker is not the user, get the model to say something from the persona.
-        // Otherwise, let the user say something.
+        this._nextSpeaker = toolCall.function.arguments.speaker
+        console.debug("this._nextSpeaker:", this._nextSpeaker)
+        output = `Next speaker: ${this._nextSpeaker}`
+        break
+      default:
+        output = `Unknown tool call: ${toolCall.function.name}`
         break
     }
 
-    const m = new MeetingMessage(MeetingMessageRole.Tool, "TODO result", message.from)
-    m.tool_call_id = toolCallId
+    const m: OllamaMessage = {
+      role: 'tool',
+      content: output,
+    }
     this._messages.push(m)
   }
 }
