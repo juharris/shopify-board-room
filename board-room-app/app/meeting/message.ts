@@ -7,6 +7,24 @@ export enum MeetingMessageRole {
   Tool = 'tool',
 }
 
+export const getMeetingMessageRole = (role: string): MeetingMessageRole => {
+  const result = MeetingMessageRole[role as keyof typeof MeetingMessageRole]
+  if (result === undefined) {
+    // The above lookup should work, but it does not locally.
+    switch (role) {
+      case 'assistant':
+        return MeetingMessageRole.Assistant
+      case 'system':
+        return MeetingMessageRole.System
+      case 'tool':
+        return MeetingMessageRole.Tool
+      case 'user':
+        return MeetingMessageRole.User
+    }
+  }
+  return result
+}
+
 export class MeetingMessage {
   private _id: string = Math.random().toString(36).substring(2)
 

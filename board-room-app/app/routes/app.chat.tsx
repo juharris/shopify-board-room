@@ -254,6 +254,7 @@ export default function ChatPage() {
                 </BlockStack>
               </Scrollable>
               <Divider />
+              {/* TODO Add suggestions like "Ask the CTO" or "Invite my cousin Zach" */}
               <TextField
                 label=""
                 value={message}

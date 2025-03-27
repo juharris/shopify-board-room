@@ -6,7 +6,7 @@ import {
   type ToolCall,
 } from 'ollama'
 import { MeetingMember } from './member'
-import { MeetingMessage, MeetingMessageRole } from './message'
+import { getMeetingMessageRole, MeetingMessage, MeetingMessageRole } from './message'
 
 /**
  * Callback for streaming the response from the AI.
@@ -47,11 +47,17 @@ export class Meeting {
         return m
       }
       if (m.role) {
-        return new MeetingMessage(MeetingMessageRole[m.role as keyof typeof MeetingMessageRole],
-          m.content ?? JSON.stringify(m.tool_calls, null, 2),
-          new MeetingMember("Tool", MeetingMessageRole.Tool))
+        const role = getMeetingMessageRole(m.role)
+        console.debug("Meeting.chatMessages: m:", m, "role:", role)
+        const name = role === MeetingMessageRole.Tool ? "Tool Result" : "Tool Call"
+        const fromId = role === MeetingMessageRole.Tool ? "tool_result" : "tool_call"
+        return new MeetingMessage(
+          role,
+          m.content || JSON.stringify(m.tool_calls, null, 2),
+          new MeetingMember(name, fromId))
       }
 
+      // Shouldn't happen.
       throw new Error(`Unexpected message: ${JSON.stringify(m)}`)
     })
   }
@@ -91,10 +97,11 @@ export class Meeting {
       })
 
       let responseMessage: MeetingMessage | undefined = undefined
-
+      let hadToolCall = false
       for await (const chunk of response) {
         console.debug("chunk:", chunk)
         if (chunk.message.tool_calls) {
+          hadToolCall = true
           for (const toolCall of chunk.message.tool_calls) {
             const handleToolCallResponse = await this.handleToolCall(message, chunk, toolCall)
             nextTools = handleToolCallResponse.nextTools
@@ -117,9 +124,13 @@ export class Meeting {
           cb(responseMessage, chunk.message.content)
         }
 
-        if (chunk.done && chunk.done_reason === 'stop' && chunk.message.role === 'assistant' && !chunk.message.content) {
+        // Detect when the model outputs no tools calls and no content, then give control back to the user.
+        if (!hadToolCall && responseMessage === undefined
+          && chunk.done && chunk.done_reason === 'stop'
+          && chunk.message.role === 'assistant' && !chunk.message.content) {
           // It generated an empty message, which means it's done.
-          break
+          console.debug("Meeting.generateResponses: done")
+          this._nextSpeaker = REAL_USER_LABEL
         }
 
         // if (!chunk.done && chunk.message.role === 'assistant') {
