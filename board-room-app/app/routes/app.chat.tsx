@@ -137,6 +137,7 @@ export default function ChatPage() {
     }
 
     try {
+      // console.debug("sendMessage: Sending message", message)
       await meeting.sendMessage(message, options.ai.ollama.tools, streamingCallback)
     } catch (error) {
       console.error(error)
@@ -149,7 +150,7 @@ export default function ChatPage() {
     // TODO Allow Shift+Enter to not send the message.
     // console.debug("handleMessageChange", value);
     if (value.endsWith("\n")) {
-      console.debug("Sending message");
+      // console.debug("handleMessageChange: Sending message");
       setMessage("");
       await sendMessage(value.trimEnd());
     } else {

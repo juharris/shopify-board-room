@@ -1,4 +1,10 @@
-import type { ChatResponse, Ollama, Message as OllamaMessage, Tool, ToolCall } from 'ollama'
+import {
+  type ChatResponse,
+  type Ollama,
+  type Message as OllamaMessage,
+  type Tool,
+  type ToolCall,
+} from 'ollama'
 import { MeetingMember } from './member'
 import { MeetingMessage, MeetingMessageRole } from './message'
 
@@ -14,20 +20,40 @@ export type StreamingCallback = (
 
 export const REAL_USER_LABEL = 'real_user'
 
+// Very ad-hoc for now, could generalize later.
+class HandleToolCallResponse {
+  nextTools?: Tool[] = undefined
+}
+
 export class Meeting {
   private _messages: (MeetingMessage | OllamaMessage)[] = []
   private _nextSpeaker: string = "Assistant"
 
   // eslint-disable-next-line no-useless-constructor
   constructor(
-    private ollama: Ollama,
-    private nextModel: string,
+    private _ollamaClient: Ollama,
+    private _nextModel: string,
   ) {
     this.restart()
   }
 
-  public get chatMessages() {
-    return this._messages.filter(m => m instanceof MeetingMessage) as MeetingMessage[]
+  public get chatMessages(): MeetingMessage[] {
+    // Ideally:
+    // return this._messages.filter(m => m instanceof MeetingMessage)
+
+    // With showing the tool calls:
+    return this._messages.map(m => {
+      if (m instanceof MeetingMessage) {
+        return m
+      }
+      if (m.role) {
+        return new MeetingMessage(MeetingMessageRole[m.role as keyof typeof MeetingMessageRole],
+          m.content ?? JSON.stringify(m.tool_calls, null, 2),
+          new MeetingMember("Tool", MeetingMessageRole.Tool))
+      }
+
+      throw new Error(`Unexpected message: ${JSON.stringify(m)}`)
+    })
   }
 
   public addMessages(messages: MeetingMessage[]) {
@@ -48,24 +74,30 @@ export class Meeting {
     tools: Tool[] | undefined,
     cb: StreamingCallback,
   ) {
-    const maxLoopCount = 8
+    // console.debug("Meeting.generateResponses: message:", message)
+    const maxLoopCount = 9
     let loopCount = 0
+    let nextTools = tools
+    this._nextSpeaker = "Assistant"
     while (++loopCount < maxLoopCount && this._nextSpeaker !== REAL_USER_LABEL) {
+      console.debug("Meeting.generateResponses: loopCount:", loopCount)
       const messages = Meeting.convertMessages(this._messages)
-      console.debug("messages:", messages)
-      const response = await this.ollama.chat({
-        model: this.nextModel,
+      // console.debug("messages:", messages, JSON.stringify(messages))
+      const response = await this._ollamaClient.chat({
+        model: this._nextModel,
         messages,
         stream: true,
-        tools,
+        tools: nextTools,
       })
+
       let responseMessage: MeetingMessage | undefined = undefined
 
       for await (const chunk of response) {
         console.debug("chunk:", chunk)
         if (chunk.message.tool_calls) {
           for (const toolCall of chunk.message.tool_calls) {
-            await this.handleToolCall(message, chunk, toolCall)
+            const handleToolCallResponse = await this.handleToolCall(message, chunk, toolCall)
+            nextTools = handleToolCallResponse.nextTools
             cb(responseMessage, undefined)
           }
 
@@ -76,10 +108,18 @@ export class Meeting {
           if (!responseMessage) {
             responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, chunk.message.content, new MeetingMember(this._nextSpeaker, this._nextSpeaker))
             this._messages.push(responseMessage)
+
+            // Reset the tools for the next round.
+            nextTools = tools
           } else {
             responseMessage.content += chunk.message.content
           }
           cb(responseMessage, chunk.message.content)
+        }
+
+        if (chunk.done && chunk.done_reason === 'stop' && chunk.message.role === 'assistant' && !chunk.message.content) {
+          // It generated an empty message, which means it's done.
+          break
         }
 
         // if (!chunk.done && chunk.message.role === 'assistant') {
@@ -101,36 +141,51 @@ export class Meeting {
   private static convertMessages(messages: (MeetingMessage | OllamaMessage)[]): OllamaMessage[] {
     return messages.map(m => {
       if (m instanceof MeetingMessage) {
+        const prefix = m.role === MeetingMessageRole.Assistant ? `${m.from.name}: ` : ""
         return {
           role: m.role,
-          content: `${m.from.name}: ${m.content}`,
+          content: `${prefix}${m.content}`,
         }
       }
       return m
     })
   }
 
-  private async handleToolCall(message: MeetingMessage, response: ChatResponse, toolCall: ToolCall) {
-    // TODO Use tool call ID?
-    // Is this role right?
-    this._messages.push(response.message)
-    let output: string | undefined = undefined
+  private async handleToolCall(message: MeetingMessage, response: ChatResponse, toolCall: ToolCall)
+    : Promise<HandleToolCallResponse> {
+    const knownFunctions = ['select_next_speaker']
+    if (!knownFunctions.includes(toolCall.function.name)) {
+      // It happens, just ignore it for now.
+      return {}
+    }
 
+    this._messages.push(response.message)
+
+    let output: string | undefined = undefined
+    let nextTools: Tool[] | undefined = undefined
     switch (toolCall.function.name) {
       case 'select_next_speaker':
         this._nextSpeaker = toolCall.function.arguments.speaker
-        console.debug("this._nextSpeaker:", this._nextSpeaker)
+        console.debug("handleToolCall: this._nextSpeaker:", this._nextSpeaker)
         output = `Next speaker: ${this._nextSpeaker}`
+        // We want to let someone else speak, so we should not use a tool next time,
+        // also, Ollama will not stream the response if we include tools in the request.
+        nextTools = []
         break
       default:
-        output = `Unknown tool call: ${toolCall.function.name}`
-        break
+        // Won't happen because of the check above for the function name.
+        throw new Error(`Unknown tool call: ${toolCall.function.name}`)
     }
 
-    const m: OllamaMessage = {
+    const toolResponseMessage: OllamaMessage = {
       role: 'tool',
       content: output,
     }
-    this._messages.push(m)
+    this._messages.push(toolResponseMessage)
+
+
+    return {
+      nextTools,
+    }
   }
 }
