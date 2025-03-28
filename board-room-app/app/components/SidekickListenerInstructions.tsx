@@ -6,8 +6,14 @@ export default function SidekickListenerInstructions() {
       <Text as="p" variant="bodyMd">
         To include Sidekick in the meeting, run this following in the parent window:
       </Text>
-      <pre>
-        {`
+      <details>
+        <summary>
+          <Text as="span" variant="bodyMd">
+            Click to show code
+          </Text>
+        </summary>
+        <pre>
+          {`
         window.addEventListener("message", (event) => {
           // console.debug("message", event)
           switch (event.data.type) {
@@ -31,7 +37,8 @@ export default function SidekickListenerInstructions() {
         }, false)
         document.querySelector('iframe[title=board-room-app]').contentWindow.postMessage({type: 'pong'}, '*')
         `}
-      </pre>
+        </pre>
+      </details>
     </div>
   )
 }

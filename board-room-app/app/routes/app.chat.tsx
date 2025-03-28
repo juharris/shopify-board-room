@@ -96,17 +96,17 @@ export default function ChatPage() {
           " Do not include (from <title>) at the beginning of a message. For example, do not include \"(from CTO)\" nor \"(from CEO)\" nor \"(from CFO)\" at the beginning of a message." +
           "\n\nHere are some examples of responses, which can use markdown formatting:" +
           "\n\n```\n<examples>" +
-          + "\n<example>" +
+          "\n<example>" +
           "\n**CEO:** I **declare** that we need to use AI more in our strategy to figure out how to manage our Shopify store. I would like to hear from the CTO how we can do that." +
-          + "\n</example>" +
-          + "\n<example>" +
+          "\n</example>" +
+          "\n<example>" +
           "\n**CTO:** As the CTO, I know 3 clear ways to use AI to improve our Shopify store:" +
           "\n\n1. Use AI to generate product descriptions" +
           "\n2. Use AI to generate product images" +
           "\n3. Use AI to simulate user interactions and the shopping experience" +
-          + "\n</example>" +
-          + "\n</examples>```" +
-          `\n\n Then a tool call for select_next_speaker, if enabled, could select a different persona to speak or the ${REAL_USER_LABEL} could speak.` +
+          "\n</example>" +
+          "\n</examples>```" +
+          `\n\n Then a tool call for \`select_next_speaker\`, if enabled, could select a different persona to speak or the ${REAL_USER_LABEL} could speak.` +
           "\n\nResponse and encourage to use markdown formatting to emphasize points, ideas, lists, titles, bolding, etc." +
           "\n\n The conversation begins now. Start with 3 or 4 personas discussing a topic for how to improve the store and grow sales.",
           systemMember),

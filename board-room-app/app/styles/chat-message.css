@@ -1,0 +1,16 @@
+div.system-message, div.tool-message {
+  border-color: gray;
+  border-width: 1px;
+  border-style: dashed;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+}
+
+div.assistant-message {
+  margin-left: 20%;
+}
+
+div.user-message {
+  max-width: 80%;
+}
+

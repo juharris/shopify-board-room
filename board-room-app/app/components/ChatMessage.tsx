@@ -5,6 +5,8 @@ import {
 import styles from 'app/styles/chat.module.css';
 import Markdown from 'markdown-to-jsx';
 
+import './../styles/chat-message.css'
+
 type Props = {
   message: MeetingMessage;
 };
@@ -16,24 +18,40 @@ export default function ChatMessage({ message }: Props) {
   // TODO Add advanced option to show tool calls and results and do not show them by default.
 
 
-  const { content } = message
+  const { content, role } = message
   let contents: React.ReactNode
+  let titleText: string | undefined = undefined
+  if (['tool_call', 'tool_result'].includes(message.from.id)) {
+    switch (message.from.id) {
+      case 'tool_call':
+        try {
+          const toolCalls = JSON.parse(message.content)
+          if (Array.isArray(toolCalls) && toolCalls.length === 1) {
+            titleText = `${toolCalls[0].function.name}(${JSON.stringify(toolCalls[0].function.arguments)})`
+          }
+        } catch (e) {
+          console.error(e)
+        }
+        break
+      case 'tool_result':
+        titleText = content.slice(0, 100)
+        if (titleText.length < content.length) {
+          titleText += '…'
+        }
+    }
 
-  switch (message.from.id) {
-    case 'tool_call':
-    case 'tool_result':
-      contents = (<details>
-        <summary>
-          <Text as='span' variant='bodyMd'>
-            <i title={message.from.id}>{message.from.name}</i>:
-          </Text>
-        </summary>
-        <pre className={styles.code}>{message.content}</pre>
-      </details>)
+    contents = (<details>
+      <summary>
+        <Text as='span' variant='bodyMd'>
+          <i title={message.from.id}>{message.from.name}</i>: <code>{titleText}</code>
+        </Text>
+      </summary>
+      <pre className={styles.code}>{content}</pre>
+    </details>)
   }
 
   if (!contents) {
-    switch (message.role) {
+    switch (role) {
       case MeetingMessageRole.Assistant:
         contents = (<Text as='p' variant='bodyMd'>
           {/* The message will contain their name or title as a prefix. The model really wanted to do this, probably cause I just tested with a small one (llama3.2:3b).
@@ -68,11 +86,12 @@ export default function ChatMessage({ message }: Props) {
         </Text>)
         break
       default:
-        throw new Error(`Unknown message role: ${message.role}`)
+        throw new Error(`Unknown message role: ${role}`)
     }
   }
 
-  return (<div className={`${message.role}-message`}>
+  let className = message.from.id === 'tool_call' ? 'tool-message' : `${role}-message`
+  return (<div className={className}>
     {contents}
   </div>)
 }
