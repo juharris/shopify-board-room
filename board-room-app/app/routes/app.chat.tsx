@@ -20,6 +20,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from '../styles/chat.module.css';
 import { MeetingMember } from "app/meeting/member";
 import ChatMessage from "app/components/ChatMessage";
+import SidekickListenerInstructions from "app/components/SidekickListenerInstructions";
 
 // export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
 export const PRODUCT_NAME = "JustAIce LAIgue Chat"
@@ -113,6 +114,7 @@ export default function ChatPage() {
   }
 
   const [errorLoadingOllamaModels, setErrorLoadingOllamaModels] = useState<unknown | undefined>(undefined)
+  const [isSidekickReady, setIsSidekickReady] = useState(false)
   const [options, setOptions] = useState<StoreChatOptions>(initialOptions)
   const [ollamaModels, setOllamaModels] = useState<ListResponse | undefined>(undefined)
   const [message, setMessage] = useState('')
@@ -146,11 +148,24 @@ export default function ChatPage() {
     }
   }
 
+  const checkForSidekickListener = () => {
+    window.parent.postMessage({
+      type: 'ping'
+    }, "*")
+  }
+
   // Run this once when the page loads.
   useEffect(() => {
     handleRestartMeeting()
 
     fetchOllamaModels()
+
+    window.addEventListener("message", (event) => {
+      if (event.data.type === 'pong') {
+        console.debug("pong received")
+        setIsSidekickReady(true)
+      }
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -227,6 +242,18 @@ export default function ChatPage() {
           </Layout.Section>
         )}
 
+        {!isSidekickReady && (
+          <Layout.Section variant="fullWidth">
+            <Card>
+              <Text as="p" variant="bodyMd">
+                ❌ Sidekick is not ready to be used.
+              </Text>
+              <Button onClick={checkForSidekickListener}>Check again</Button>
+              <SidekickListenerInstructions />
+            </Card>
+          </Layout.Section>
+        )}
+
         {showAdvancedOptions && (
           <Layout.Section variant="fullWidth">
             <Card>
@@ -259,6 +286,8 @@ export default function ChatPage() {
                     />
                   </div>
                 )}
+
+                {/* <SidekickListenerInstructions /> */}
 
                 {/* TODO Add section for configuring the meeting members. */}
                 < Text as="h3" variant="headingSm">
