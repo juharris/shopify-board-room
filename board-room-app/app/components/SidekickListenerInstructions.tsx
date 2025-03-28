@@ -9,18 +9,29 @@ export default function SidekickListenerInstructions() {
       <pre>
         {`
         window.addEventListener("message", (event) => {
-          console.debug("message", event)
-          if (event.data.type === 'ping') {
-            event.source.postMessage({
-              type: 'pong'
-            }, "*")
+          // console.debug("message", event)
+          switch (event.data.type) {
+            case 'askSidekick':
+              const { messageText } = event.data
+              document.querySelector('[name=sidekickMessage]').value = messageText
+              document.querySelector('div span button[aria-label=Send]').disabled = false
+              // TODO Try to send the message.
+              event.source.postMessage({
+                type: 'askedSidekick'
+              }, "*")
+              break
+            case 'ping':
+              event.source.postMessage({
+                type: 'pong'
+              }, "*")
+              break
+            default:
+              break
           }
         }, false)
+        document.querySelector('iframe[title=board-room-app]').contentWindow.postMessage({type: 'pong'}, '*')
         `}
       </pre>
-      <Text as="p" variant="bodyMd">
-        Then click "Check again" to see if Sidekick is ready.
-      </Text>
     </div>
   )
 }

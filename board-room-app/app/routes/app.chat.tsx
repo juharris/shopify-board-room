@@ -21,6 +21,7 @@ import styles from '../styles/chat.module.css';
 import { MeetingMember } from "app/meeting/member";
 import ChatMessage from "app/components/ChatMessage";
 import SidekickListenerInstructions from "app/components/SidekickListenerInstructions";
+import { checkForSidekickListener } from "app/sidekick/message-passing";
 
 // export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
 export const PRODUCT_NAME = "JustAIce LAIgue Chat"
@@ -146,12 +147,6 @@ export default function ChatPage() {
       console.error(error)
       setErrorLoadingOllamaModels(error)
     }
-  }
-
-  const checkForSidekickListener = () => {
-    window.parent.postMessage({
-      type: 'ping'
-    }, "*")
   }
 
   // Run this once when the page loads.

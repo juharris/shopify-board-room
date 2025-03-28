@@ -192,6 +192,10 @@ export class Meeting {
         // also, Ollama will not stream the response if we include tools in the request.
         nextTools = []
         break
+      // TODO Handle ask_Shopify_Sidekick
+      // case 'ask_Shopify_Sidekick':
+
+      //   break
       default:
         // Won't happen because of the check above for the function name.
         throw new Error(`Unknown tool call: ${toolCall.function.name}`)
