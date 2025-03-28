@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "9c3f796e6d58f010b42928232396a3ba"
-application_url = "https://cuba-decimal-contain-cooler.trycloudflare.com"
+application_url = "https://petition-panels-here-scenario.trycloudflare.com"
 embedded = true
 name = "board-room-app"
 handle = "board-room-app"
@@ -27,9 +27,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://cuba-decimal-contain-cooler.trycloudflare.com/auth/callback",
-  "https://cuba-decimal-contain-cooler.trycloudflare.com/auth/shopify/callback",
-  "https://cuba-decimal-contain-cooler.trycloudflare.com/api/auth/callback"
+  "https://petition-panels-here-scenario.trycloudflare.com/auth/callback",
+  "https://petition-panels-here-scenario.trycloudflare.com/auth/shopify/callback",
+  "https://petition-panels-here-scenario.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

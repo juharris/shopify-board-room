@@ -22,12 +22,12 @@ export const REAL_USER_LABEL = 'real_user'
 
 // Very ad-hoc for now, could generalize later.
 class HandleToolCallResponse {
+  nextSpeaker?: string = undefined
   nextTools?: Tool[] = undefined
 }
 
 export class Meeting {
   private _messages: (MeetingMessage | OllamaMessage)[] = []
-  private _nextSpeaker: string = "Assistant"
 
   // eslint-disable-next-line no-useless-constructor
   constructor(
@@ -48,7 +48,6 @@ export class Meeting {
       }
       if (m.role) {
         const role = getMeetingMessageRole(m.role)
-        console.debug("Meeting.chatMessages: m:", m, "role:", role)
         const name = role === MeetingMessageRole.Tool ? "Tool Result" : "Tool Call"
         const fromId = role === MeetingMessageRole.Tool ? "tool_result" : "tool_call"
         return new MeetingMessage(
@@ -84,11 +83,13 @@ export class Meeting {
     const maxLoopCount = 9
     let loopCount = 0
     let nextTools = tools
-    this._nextSpeaker = "Assistant"
-    while (++loopCount < maxLoopCount && this._nextSpeaker !== REAL_USER_LABEL) {
+    let nextSpeaker = "Assistant"
+    let hadAssistantMessage = false
+    while (++loopCount < maxLoopCount && nextSpeaker !== REAL_USER_LABEL) {
       console.debug("Meeting.generateResponses: loopCount:", loopCount)
       const messages = Meeting.convertMessages(this._messages)
       // console.debug("messages:", messages, JSON.stringify(messages))
+      console.debug("Meeting.generateResponses: nextTools:", nextTools)
       const response = await this._ollamaClient.chat({
         model: this._nextModel,
         messages,
@@ -105,7 +106,12 @@ export class Meeting {
           for (const toolCall of chunk.message.tool_calls) {
             const handleToolCallResponse = await this.handleToolCall(message, chunk, toolCall)
             nextTools = handleToolCallResponse.nextTools
+            nextSpeaker = handleToolCallResponse.nextSpeaker || nextSpeaker
             cb(responseMessage, undefined)
+            if (!hadAssistantMessage && nextSpeaker === REAL_USER_LABEL) {
+              // Try force the assistant to respond.
+              nextSpeaker = "Assistant"
+            }
           }
 
           responseMessage = undefined
@@ -113,11 +119,12 @@ export class Meeting {
 
         if (chunk.message.role === 'assistant' && chunk.message.content) {
           if (!responseMessage) {
-            responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, chunk.message.content, new MeetingMember(this._nextSpeaker, this._nextSpeaker))
+            responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, chunk.message.content, new MeetingMember(nextSpeaker, nextSpeaker))
             this._messages.push(responseMessage)
 
             // Reset the tools for the next round.
             nextTools = tools
+            hadAssistantMessage = true
           } else {
             responseMessage.content += chunk.message.content
           }
@@ -130,7 +137,7 @@ export class Meeting {
           && chunk.message.role === 'assistant' && !chunk.message.content) {
           // It generated an empty message, which means it's done.
           console.debug("Meeting.generateResponses: done")
-          this._nextSpeaker = REAL_USER_LABEL
+          nextSpeaker = REAL_USER_LABEL
         }
 
         // if (!chunk.done && chunk.message.role === 'assistant') {
@@ -141,8 +148,6 @@ export class Meeting {
         // }
       }
     }
-
-    this._nextSpeaker = REAL_USER_LABEL
   }
 
   public restart() {
@@ -152,7 +157,9 @@ export class Meeting {
   private static convertMessages(messages: (MeetingMessage | OllamaMessage)[]): OllamaMessage[] {
     return messages.map(m => {
       if (m instanceof MeetingMessage) {
-        const prefix = m.role === MeetingMessageRole.Assistant ? `${m.from.name}: ` : ""
+        const prefix = m.role === MeetingMessageRole.Assistant ?
+          `(from ${m.from.name}) `
+          : ""
         return {
           role: m.role,
           content: `${prefix}${m.content}`,
@@ -173,12 +180,13 @@ export class Meeting {
     this._messages.push(response.message)
 
     let output: string | undefined = undefined
+    let nextSpeaker: string | undefined = undefined
     let nextTools: Tool[] | undefined = undefined
     switch (toolCall.function.name) {
       case 'select_next_speaker':
-        this._nextSpeaker = toolCall.function.arguments.speaker
-        console.debug("handleToolCall: this._nextSpeaker:", this._nextSpeaker)
-        output = `Next speaker: ${this._nextSpeaker}`
+        nextSpeaker = toolCall.function.arguments.speaker
+        console.debug("handleToolCall: nextSpeaker:", nextSpeaker)
+        output = `Next speaker: ${nextSpeaker}`
         // We want to let someone else speak, so we should not use a tool next time,
         // also, Ollama will not stream the response if we include tools in the request.
         nextTools = []
@@ -196,6 +204,7 @@ export class Meeting {
 
 
     return {
+      nextSpeaker,
       nextTools,
     }
   }

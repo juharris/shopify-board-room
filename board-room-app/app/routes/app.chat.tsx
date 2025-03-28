@@ -21,7 +21,8 @@ import styles from '../styles/chat.module.css';
 import { MeetingMember } from "app/meeting/member";
 import ChatMessage from "app/components/ChatMessage";
 
-export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
+// export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
+export const PRODUCT_NAME = "JustAIce LAIgue Chat"
 
 interface StoreChatOptions {
   ai: {
@@ -49,8 +50,11 @@ export default function ChatPage() {
             type: 'function',
             function: {
               name: 'select_next_speaker',
-              description: "Select the next speaker in the conversation. It could be the real person (i.e., the real_user) or one of the AI personas." +
-                " After an AI persona sends a message, then they may suggest another persona to speak next or ask the real person for their input.",
+              description: `Select the next speaker in the conversation. It could be the real person (i.e., the ${REAL_USER_LABEL}) or one of the AI personas.` +
+                " After an AI persona sends a message, then they may suggest another persona to speak next or ask the real person for their input." +
+                " If they suggest another persona to speak next, then the input speaker to this tool should be the one they suggest to speak." +
+                `Do not select ${REAL_USER_LABEL} as the speaker if they were the last to say something.` +
+                "",
               parameters: {
                 type: 'object',
                 required: ['speaker'],
@@ -74,10 +78,34 @@ export default function ChatPage() {
       },
       initialMessages: [
         new MeetingMessage(MeetingMessageRole.System,
-          "This conversation is a meeting which includes a real person chatting with fake AI personas about how to manage their Shopify store. " +
-          "The AI personas may chat with each and ask each other questions or ask the real person questions." +
-          "If the real person starts with something simple such as \"Let's begin.\", " +
-          "then the AI personas should start the conversation amongst themselves for a few short messages before asking the real person for their input.",
+          "This conversation is a meeting which includes a real person chatting with fake AI personas about how to manage their Shopify store." +
+          " The AI personas in assistant messages should mostly chat with each other and ask each other questions." +
+          " They may occasionally ask the real person questions." +
+          " If the real person starts with something simple such as \"Let's begin.\", " +
+          "then the AI personas should start the conversation amongst themselves for a few short messages before asking the real person for their input." +
+          "\n\n" +
+          "The next speaker is inferred from the tool response." +
+          " Best speaking, prefix the next speaker's name or title as the first line of the message." +
+          " For example, if the next speaker is the CEO, then the first line of the message should be \"**CEO:** \"" +
+          // "Use a tool call before changing the persona that responds." +
+          // + " "
+          // + "Do not change the persona in the same generated response message." +
+          // "\n\n Do not include a prefix to indicate the name or title of the persona because it will be inferred from the tool call request arguments." +
+          // " Do not include (from <title>) at the beginning of a message. For example, do not include \"(from CTO)\" at the beginning of a message." +
+          "\n\nHere are some examples of responses, which can use markdown formatting:" +
+          "\n\n```\n<examples>" +
+          + "\n<example>" +
+          "\n**CEO:** I **declare** that we need to use AI more in our strategy to figure out how to manage our Shopify store. I would like to hear from the CTO how we can do that." +
+          + "\n</example>" +
+          + "\n<example>" +
+          "\n**CTO:** As the CTO, I know 3 clear ways to use AI to improve our Shopify store:" +
+          "\n\n1. Use AI to generate product descriptions" +
+          "\n2. Use AI to generate product images" +
+          "\n3. Use AI to simulate user interactions and the shopping experience" +
+          + "\n</example>" +
+          + "\n</examples>```" +
+          `\n\n Then a tool call for select_next_speaker, if enabled, could select a different persona to speak or the ${REAL_USER_LABEL} could speak.` +
+          "\n\n The conversation begins now.",
           systemMember),
       ],
     },

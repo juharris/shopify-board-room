@@ -28,12 +28,14 @@ export default function App() {
         <Link to="/app" rel="home">
           (dev) Remix app template
         </Link>
+        {/*
         <Link to="/app/qrcodes">
           (dev) QR Codes
         </Link>
         <Link to="/app/additional">
           (dev) Additional page
         </Link>
+         */}
       </NavMenu>
       <Outlet />
     </AppProvider>
