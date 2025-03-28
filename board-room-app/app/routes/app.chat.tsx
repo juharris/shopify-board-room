@@ -86,12 +86,12 @@ export default function ChatPage() {
           "\n\n" +
           "The next speaker is inferred from the tool response." +
           " Best speaking, prefix the next speaker's name or title as the first line of the message." +
-          " For example, if the next speaker is the CEO, then the first line of the message should be \"**CEO:** \"" +
+          " For example, if the next speaker is the CEO, then the first line of the message should be \"**CEO:** \"." +
           // "Use a tool call before changing the persona that responds." +
           // + " "
           // + "Do not change the persona in the same generated response message." +
           // "\n\n Do not include a prefix to indicate the name or title of the persona because it will be inferred from the tool call request arguments." +
-          // " Do not include (from <title>) at the beginning of a message. For example, do not include \"(from CTO)\" at the beginning of a message." +
+          " Do not include (from <title>) at the beginning of a message. For example, do not include \"(from CTO)\" nor \"(from CEO)\" nor \"(from CFO)\" at the beginning of a message." +
           "\n\nHere are some examples of responses, which can use markdown formatting:" +
           "\n\n```\n<examples>" +
           + "\n<example>" +
@@ -105,7 +105,8 @@ export default function ChatPage() {
           + "\n</example>" +
           + "\n</examples>```" +
           `\n\n Then a tool call for select_next_speaker, if enabled, could select a different persona to speak or the ${REAL_USER_LABEL} could speak.` +
-          "\n\n The conversation begins now.",
+          "\n\nResponse and encourage to use markdown formatting to emphasize points, ideas, lists, titles, bolding, etc." +
+          "\n\n The conversation begins now. Start with 3 or 4 personas discussing a topic for how to improve the store and grow sales.",
           systemMember),
       ],
     },

@@ -157,9 +157,10 @@ export class Meeting {
   private static convertMessages(messages: (MeetingMessage | OllamaMessage)[]): OllamaMessage[] {
     return messages.map(m => {
       if (m instanceof MeetingMessage) {
-        const prefix = m.role === MeetingMessageRole.Assistant ?
-          `(from ${m.from.name}) `
-          : ""
+        // const prefix = m.role === MeetingMessageRole.Assistant ?
+        //   `(from ${m.from.name}) `
+        //   : ""
+        const prefix = ""
         return {
           role: m.role,
           content: `${prefix}${m.content}`,
