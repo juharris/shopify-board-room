@@ -131,7 +131,6 @@ export default function ChatPage() {
     host: options.ai.ollama.host,
   }), [options.ai.ollama.host])
 
-  // TODO Allow changing the model during the meeting.
   const meeting = useMemo(() => new Meeting(client, options.ai.ollama.model), [client, options.ai.ollama.model])
 
   const handleRestartMeeting = useCallback(() => {
