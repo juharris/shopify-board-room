@@ -28,16 +28,16 @@ document.querySelector('iframe[title=board-room-app]').contentWindow.postMessage
 `
 
 export default function SidekickListenerInstructions() {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
   const handleToggle = useCallback(() => setOpen((open) => !open), [])
   const shopify = useAppBridge()
   return (
     <Layout>
       <Layout.Section>
         <Text as="p" variant="bodyMd">
-          To include Sidekick in the meeting, run this following in the parent window:
+          To include Sidekick in the meeting, run this code in the parent window:
         </Text>
-        <Button
+        <Button variant='primary'
           onClick={() => {
             navigator.clipboard.writeText(CODE)
             shopify.toast.show("Code copied to clipboard")
@@ -45,26 +45,26 @@ export default function SidekickListenerInstructions() {
         >
           Copy code
         </Button>
-        <div>
-          <Button
-            onClick={handleToggle}
-            ariaExpanded={open}
-            ariaControls="basic-collapsible"
-          >
-            Click to show code
-          </Button>
+      </Layout.Section>
+      <Layout.Section>
+        <Button
+          onClick={handleToggle}
+          ariaExpanded={open}
+          ariaControls="basic-collapsible"
+        >
+          Show code
+        </Button>
 
-          <Collapsible
-            open={open}
-            id="basic-collapsible"
-            transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
-            expandOnPrint
-          >
-            <pre>
-              {CODE}
-            </pre>
-          </Collapsible>
-        </div>
+        <Collapsible
+          open={open}
+          id="basic-collapsible"
+          transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
+          expandOnPrint
+        >
+          <pre>
+            {CODE}
+          </pre>
+        </Collapsible>
       </Layout.Section>
     </Layout>
   )

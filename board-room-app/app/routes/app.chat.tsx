@@ -22,7 +22,6 @@ import '../styles/chat.css'
 import { MeetingMember } from "app/meeting/member";
 import ChatMessage from "app/components/ChatMessage";
 import SidekickListenerInstructions from "app/components/SidekickListenerInstructions";
-import { checkForSidekickListener } from "app/sidekick/message-passing";
 import { getInitialSuggestions, getSuggestions } from "app/suggestions/get-suggestions";
 
 // export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
@@ -41,8 +40,8 @@ interface StoreChatOptions {
 }
 
 export default function ChatPage() {
-  const systemMember = new MeetingMember("System", 'system');
-  const userMember = new MeetingMember("You", 'user');
+  const systemMember = new MeetingMember("System", 'system')
+  const userMember = new MeetingMember("You", 'user')
 
   // TODO Load from IndexedDB and allow configuring in the UI.
   const initialOptions: StoreChatOptions = {
@@ -111,7 +110,7 @@ export default function ChatPage() {
           "\n</examples>```" +
           `\n\n Then a tool call for \`select_next_speaker\`, if enabled, could select a different persona to speak or the ${REAL_USER_LABEL} could speak.` +
           "\n\nResponse and encourage to use markdown formatting to emphasize points, ideas, lists, titles, bolding, etc." +
-          "\n\n The conversation begins now. Start with 3 or 4 personas discussing a topic for how to improve the store and grow sales.",
+          "\n\n The conversation begins now. Start with 3 or 4 personas discussing a topic suggested by the user or if not topic is brought up, then start with interesting and novel ideas for how to improve the store and grow sales.",
           systemMember),
       ],
     },
@@ -168,8 +167,10 @@ export default function ChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const sendMessage = async (text: string) => {
-    const message = new MeetingMessage(MeetingMessageRole.User, text, userMember)
+  const sendMessage = async (message: string | MeetingMessage) => {
+    if (typeof message === 'string') {
+      message = new MeetingMessage(MeetingMessageRole.User, message, userMember)
+    }
 
     setMessages(prev => [...prev, message])
 
@@ -177,6 +178,7 @@ export default function ChatPage() {
       // TODO Ignore if they're for another meeting that has ended after restarting.
       setMessages([...meeting.chatMessages])
       // TODO Automatically scroll to the bottom of the messages if already scrolled to the bottom.
+
     }
 
     try {
@@ -223,8 +225,8 @@ export default function ChatPage() {
             </Button>
           )}
         </Layout.Section>
-        <Layout.Section variant="oneThird">
-          <Button variant="primary"
+        <Layout.Section variant='oneThird'>
+          <Button variant='secondary'
             onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
           >
             {showAdvancedOptions ? "Hide Advanced Options" : "🤓 Advanced Options"}
@@ -247,9 +249,9 @@ export default function ChatPage() {
           <Layout.Section variant="fullWidth">
             <Card>
               <Text as="p" variant="bodyMd">
-                ❌ Sidekick is not ready to be used.
+                ⚠️ Sidekick is not ready to be used.
               </Text>
-              <Button onClick={checkForSidekickListener}>Check again</Button>
+              {/* <Button onClick={checkForSidekickListener}>Check again</Button> */}
               <SidekickListenerInstructions />
             </Card>
           </Layout.Section>
@@ -317,8 +319,8 @@ export default function ChatPage() {
                 {suggestions.map((suggestion, index) => {
                   return (
                     <Layout.Section key={index} variant="oneThird">
-                      <Button variant="secondary"
-                        onClick={() => sendMessage(suggestion.content)}>
+                      <Button variant='primary'
+                        onClick={() => sendMessage(suggestion)}>
                         {suggestion.content}
                       </Button>
                     </Layout.Section>
