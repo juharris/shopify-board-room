@@ -20,27 +20,27 @@ export default function ChatMessage({ message }: Props) {
 
   const { content, role } = message
   let contents: React.ReactNode
-  let titleText: string | undefined = undefined
+  let summaryText: string | undefined = undefined
   if (['tool_call', 'tool_result'].includes(message.from.id)) {
     switch (message.from.id) {
       case 'tool_call':
         try {
           const toolCalls = JSON.parse(message.content)
           if (Array.isArray(toolCalls) && toolCalls.length === 1) {
-            titleText = `${toolCalls[0].function.name}(${JSON.stringify(toolCalls[0].function.arguments)})`
+            summaryText = getSummaryText(`${toolCalls[0].function.name}(${JSON.stringify(toolCalls[0].function.arguments)})`)
           }
         } catch (e) {
           console.error(e)
         }
         break
       case 'tool_result':
-        titleText = getSummaryText(content)
+        summaryText = getSummaryText(content)
     }
 
     contents = (<details>
       <summary>
         <Text as='span' variant='bodyMd'>
-          <i title={message.from.id}>{message.from.name}</i>: <code>{titleText}</code>
+          <i title={message.from.id}>{message.from.name}</i>: <code>{summaryText}</code>
         </Text>
       </summary>
       <pre className={styles.code}>{content}</pre>
@@ -58,11 +58,11 @@ export default function ChatMessage({ message }: Props) {
         </Text>)
         break
       case MeetingMessageRole.System:
-        titleText = getSummaryText(content)
+        summaryText = getSummaryText(content)
         contents = (<details>
           <summary>
             <Text as='span' variant='bodyMd'>
-              <i title={message.from.id}>{message.from.name}</i>: {titleText}
+              <i title={message.from.id}>{message.from.name}</i>: {summaryText}
             </Text>
           </summary>
           <Markdown>{content}</Markdown>
@@ -88,7 +88,7 @@ export default function ChatMessage({ message }: Props) {
     }
   }
 
-  let className = message.from.id === 'tool_call' ? 'tool-message' : `${role}-message`
+  const className = message.from.id === 'tool_call' ? 'tool-message' : `${role}-message`
   return (<div className={className}>
     {contents}
   </div>)

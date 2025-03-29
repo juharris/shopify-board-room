@@ -23,6 +23,7 @@ import { MeetingMember } from "app/meeting/member";
 import ChatMessage from "app/components/ChatMessage";
 import SidekickListenerInstructions from "app/components/SidekickListenerInstructions";
 import { checkForSidekickListener } from "app/sidekick/message-passing";
+import { getInitialSuggestions, getSuggestions } from "app/suggestions/get-suggestions";
 
 // export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
 // export const PRODUCT_NAME = "JustAIce LAIgue Chat"
@@ -86,7 +87,7 @@ export default function ChatPage() {
           " The AI personas in assistant messages should mostly chat with each other and ask each other questions." +
           " They may occasionally ask the real person questions." +
           " If the real person starts with something simple such as \"Let's begin.\", " +
-          "then the AI personas should start the conversation amongst themselves for a few short messages before asking the real person for their input." +
+          "then the AI personas should start the conversation amongst themselves for a few short messages that are shared in the chat before asking the real person for their input." +
           "\n\n" +
           "The next speaker is inferred from the tool response." +
           " Best speaking, prefix the next speaker's name or title as the first line of the message." +
@@ -118,11 +119,12 @@ export default function ChatPage() {
 
   const [errorLoadingOllamaModels, setErrorLoadingOllamaModels] = useState<unknown | undefined>(undefined)
   const [isSidekickReady, setIsSidekickReady] = useState(false)
-  const [options, setOptions] = useState<StoreChatOptions>(initialOptions)
-  const [ollamaModels, setOllamaModels] = useState<ListResponse | undefined>(undefined)
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<MeetingMessage[]>([])
+  const [options, setOptions] = useState<StoreChatOptions>(initialOptions)
+  const [ollamaModels, setOllamaModels] = useState<ListResponse | undefined>(undefined)
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
+  const [suggestions, setSuggestions] = useState<MeetingMessage[]>([])
 
   // TODO Allow changing the host during the meeting.
   const client = useMemo(() => new Ollama({
@@ -138,6 +140,7 @@ export default function ChatPage() {
       meeting.addMessages(options.ai.initialMessages)
     }
     setMessages([...meeting.chatMessages])
+    setSuggestions(getInitialSuggestions(3))
   }, [meeting, options.ai.initialMessages])
 
   const fetchOllamaModels = async () => {
@@ -185,6 +188,8 @@ export default function ChatPage() {
       meeting.addMessages([new MeetingMessage(MeetingMessageRole.Assistant, "An error occurred while generating the response. " + error, new MeetingMember("Error", "error"))])
       setMessages([...meeting.chatMessages])
     }
+
+    setSuggestions(getSuggestions(3))
   }
 
   const handleMessageChange = async (value: string) => {
@@ -309,7 +314,18 @@ export default function ChatPage() {
                 </BlockStack>
               </Scrollable>
               <Divider />
-              {/* TODO Add suggestions like "Ask the CTO" or "Invite my cousin Zach" */}
+              {suggestions && <Layout>
+                {suggestions.map((suggestion, index) => {
+                  return (
+                    <Layout.Section key={index} variant="oneThird">
+                      <Button variant="secondary"
+                        onClick={() => sendMessage(suggestion.content)}>
+                        {suggestion.content}
+                      </Button>
+                    </Layout.Section>
+                  )
+                })}
+              </Layout>}
               <TextField
                 label=""
                 value={message}
