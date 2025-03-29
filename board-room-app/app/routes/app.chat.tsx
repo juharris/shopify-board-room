@@ -3,6 +3,7 @@ import {
   BlockStack,
   Button,
   Card,
+  Collapsible,
   Divider,
   Layout,
   Page,
@@ -120,8 +121,9 @@ export default function ChatPage() {
   const [isSidekickReady, setIsSidekickReady] = useState(false)
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<MeetingMessage[]>([])
-  const [options, setOptions] = useState<StoreChatOptions>(initialOptions)
   const [ollamaModels, setOllamaModels] = useState<ListResponse | undefined>(undefined)
+  const [options, setOptions] = useState<StoreChatOptions>(initialOptions)
+  const [origin, setOrigin] = useState('*')
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   const [suggestions, setSuggestions] = useState<MeetingMessage[]>([])
 
@@ -154,6 +156,8 @@ export default function ChatPage() {
 
   // Run this once when the page loads.
   useEffect(() => {
+    setOrigin(window.location.origin)
+
     handleRestartMeeting()
 
     fetchOllamaModels()
@@ -171,6 +175,8 @@ export default function ChatPage() {
     if (typeof message === 'string') {
       message = new MeetingMessage(MeetingMessageRole.User, message, userMember)
     }
+
+    setSuggestions([])
 
     setMessages(prev => [...prev, message])
 
@@ -213,109 +219,115 @@ export default function ChatPage() {
   return (
     <Page>
       <TitleBar title={PRODUCT_NAME} />
-      <Layout>
-        <Layout.Section variant="oneThird">
-          {messages.length > (options.ai.initialMessages?.length ?? 0) ? (
-            <Button onClick={handleRestartMeeting} variant="secondary">
-              🧹 Clear Meeting
-            </Button>
-          ) : (
-            <Button onClick={() => sendMessage("Let's begin.")} variant="primary">
-              🆕 Start Meeting
-            </Button>
-          )}
-        </Layout.Section>
-        <Layout.Section variant='oneThird'>
-          <Button variant='secondary'
-            onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-          >
-            {showAdvancedOptions ? "Hide Advanced Options" : "🤓 Advanced Options"}
-          </Button>
-        </Layout.Section>
-
-        {errorLoadingOllamaModels !== undefined && (
-          <Layout.Section variant="fullWidth">
-            <Card>
-              <Text as="p" variant="bodyMd">
-                ❌ Error loading list of Ollama models. Ensure that Ollama is running.
-                See the Advanced Options for more information.
-              </Text>
-              <Button onClick={() => fetchOllamaModels()}>Try again</Button>
-            </Card>
+      <BlockStack gap='500'>
+        <Layout>
+          <Layout.Section variant="oneThird">
+            {messages.length > (options.ai.initialMessages?.length ?? 0) ? (
+              <Button onClick={handleRestartMeeting} variant="secondary">
+                🧹 Clear Meeting
+              </Button>
+            ) : (
+              <Button onClick={() => sendMessage("Let's begin.")} variant="primary">
+                🆕 Start Meeting
+              </Button>
+            )}
           </Layout.Section>
-        )}
-
-        {!isSidekickReady && (
-          <Layout.Section variant="fullWidth">
-            <Card>
-              <Text as="p" variant="bodyMd">
-                ⚠️ Sidekick is not ready to be used.
-              </Text>
-              {/* <Button onClick={checkForSidekickListener}>Check again</Button> */}
-              <SidekickListenerInstructions />
-            </Card>
+          <Layout.Section variant='oneThird'>
+            <Button variant='secondary'
+              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+            >
+              {showAdvancedOptions ? "Hide Advanced Options" : "🤓 Advanced Options"}
+            </Button>
           </Layout.Section>
-        )}
 
-        {showAdvancedOptions && (
-          <Layout.Section variant="fullWidth">
-            <Card>
-              <Scrollable className={styles.options} shadow focusable>
-                <Text as="h2" variant="headingMd">
-                  🤓 Advanced Options
-                </Text>
-
+          {errorLoadingOllamaModels !== undefined && (
+            <Layout.Section variant="fullWidth">
+              <Card>
                 <Text as="p" variant="bodyMd">
-                  To allow requests to your local Ollama server, run:
+                  ❌ Error loading list of Ollama models. Ensure that Ollama is running.
+                  See the Advanced Options for more information.
                 </Text>
-                <pre>OLLAMA_ORIGINS='{window.location.origin}' ollama serve</pre>
+                <Button onClick={() => fetchOllamaModels()}>Try again</Button>
+              </Card>
+            </Layout.Section>
+          )}
 
-                {errorLoadingOllamaModels !== undefined && (
-                  <Text as="p" variant="bodyMd">
-                    ❌ Error loading list of Ollama models. Ensure that Ollama is running.
-                  </Text>
-                )}
-
-                {ollamaModels?.models.length && (
-                  <div>
-                    <Text as="p" variant="bodyMd">
-                      ✅ Found models hosted on your local Ollama server.
-                    </Text>
-                    <Select
-                      label="Ollama Model"
-                      options={ollamaModels?.models.map(model => ({ label: model.name, value: model.name })) ?? []}
-                      onChange={handleModelChange}
-                      value={options.ai.ollama.model}
-                    />
-                  </div>
-                )}
-
-                {/* <SidekickListenerInstructions /> */}
-
-                {/* TODO Add section for configuring the meeting members. */}
-                < Text as="h3" variant="headingSm">
-                  Current Configuration
+          {!isSidekickReady && (
+            <Layout.Section variant="fullWidth">
+              <Card>
+                <Text as="p" variant="bodyMd">
+                  ⚠️ Sidekick is not ready to be used.
                 </Text>
-                <pre>
-                  {JSON.stringify(options, null, 2)}
-                </pre>
-              </Scrollable>
-            </Card>
-          </Layout.Section>
-        )}
+                {/* <Button onClick={checkForSidekickListener}>Check again</Button> */}
+                <SidekickListenerInstructions />
+              </Card>
+            </Layout.Section>
+          )}
+        </Layout>
 
-        <Layout.Section variant="fullWidth">
+
+        <Collapsible
+          open={showAdvancedOptions}
+          transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
+          expandOnPrint
+          id='advanced-options-collapsible'
+        >
           <Card>
-            <BlockStack gap="300">
-              <Scrollable className={styles.messages} shadow focusable>
-                <BlockStack gap="100">
-                  {messages.map((message, index) => (
-                    <ChatMessage key={`${index}-${message.content.length}`} message={message} />
-                  ))}
-                </BlockStack>
-              </Scrollable>
-              <Divider />
-              {suggestions && <Layout>
+            <Scrollable className={styles.options} shadow focusable>
+              <Text as="h2" variant="headingMd">
+                🤓 Advanced Options
+              </Text>
+
+              <Text as="p" variant="bodyMd">
+                To allow requests to your local Ollama server, run:
+              </Text>
+              <pre>OLLAMA_ORIGINS='{origin}' ollama serve</pre>
+
+              {errorLoadingOllamaModels !== undefined && (
+                <Text as="p" variant="bodyMd">
+                  ❌ Error loading list of Ollama models. Ensure that Ollama is running.
+                </Text>
+              )}
+
+              {ollamaModels?.models.length && (
+                <div>
+                  <Text as="p" variant="bodyMd">
+                    ✅ Found models hosted on your local Ollama server.
+                  </Text>
+                  <Select
+                    label="Ollama Model"
+                    options={ollamaModels?.models.map(model => ({ label: model.name, value: model.name })) ?? []}
+                    onChange={handleModelChange}
+                    value={options.ai.ollama.model}
+                  />
+                </div>
+              )}
+
+              {/* <SidekickListenerInstructions /> */}
+
+              {/* TODO Add section for configuring the meeting members. */}
+              < Text as="h3" variant="headingSm">
+                Current Configuration
+              </Text>
+              <pre>
+                {JSON.stringify(options, null, 2)}
+              </pre>
+            </Scrollable>
+          </Card>
+        </Collapsible>
+
+        <Card>
+          <BlockStack gap="300">
+            <Scrollable className={styles.messages} shadow focusable>
+              <BlockStack gap="100">
+                {messages.map((message, index) => (
+                  <ChatMessage key={`${index}-${message.content.length}`} message={message} />
+                ))}
+              </BlockStack>
+            </Scrollable>
+            <Divider />
+            {suggestions && <div className={styles.suggestions}>
+              <Layout>
                 {suggestions.map((suggestion, index) => {
                   return (
                     <Layout.Section key={index} variant="oneThird">
@@ -326,34 +338,19 @@ export default function ChatPage() {
                     </Layout.Section>
                   )
                 })}
-              </Layout>}
-              <TextField
-                label=""
-                value={message}
-                onChange={handleMessageChange}
-                multiline={3}
-                placeholder="Type your message and press Enter to send..."
-                autoComplete="off"
-              />
-            </BlockStack>
-          </Card>
-        </Layout.Section>
-        {/*
-        <Layout.Section variant="oneThird">
-          <Card>
-            <BlockStack gap="200">
-              <Text as="h2" variant="headingMd">
-                Previous Chats
-              </Text>
-              <List>
-                <List.Item>
-                </List.Item>
-              </List>
-            </BlockStack>
-          </Card>
-        </Layout.Section>
-        */}
-      </Layout>
+              </Layout>
+            </div>}
+            <TextField
+              label=""
+              value={message}
+              onChange={handleMessageChange}
+              multiline={3}
+              placeholder="Type your message and press Enter to send..."
+              autoComplete="off"
+            />
+          </BlockStack>
+        </Card>
+      </BlockStack>
     </Page >
   );
 }

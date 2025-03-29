@@ -52,12 +52,12 @@ export default function SidekickListenerInstructions() {
           ariaExpanded={open}
           ariaControls="basic-collapsible"
         >
-          Show code
+          {open ? "Hide code" : "Show code"}
         </Button>
 
         <Collapsible
           open={open}
-          id="basic-collapsible"
+          id='sidekick-listener-code-collapsible'
           transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
           expandOnPrint
         >
