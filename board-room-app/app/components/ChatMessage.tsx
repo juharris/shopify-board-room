@@ -34,10 +34,7 @@ export default function ChatMessage({ message }: Props) {
         }
         break
       case 'tool_result':
-        titleText = content.slice(0, 100)
-        if (titleText.length < content.length) {
-          titleText += '…'
-        }
+        titleText = getSummaryText(content)
     }
 
     contents = (<details>
@@ -61,10 +58,11 @@ export default function ChatMessage({ message }: Props) {
         </Text>)
         break
       case MeetingMessageRole.System:
+        titleText = getSummaryText(content)
         contents = (<details>
           <summary>
             <Text as='span' variant='bodyMd'>
-              <i title={message.from.id}>{message.from.name}</i>:
+              <i title={message.from.id}>{message.from.name}</i>: {titleText}
             </Text>
           </summary>
           <Markdown>{content}</Markdown>
@@ -94,4 +92,13 @@ export default function ChatMessage({ message }: Props) {
   return (<div className={className}>
     {contents}
   </div>)
+}
+
+const getSummaryText = (content: string) => {
+  const maxLength = 60;
+  if (content.length <= maxLength + 1) {
+    return content;
+  }
+
+  return content.slice(0, maxLength).trim() + '…';
 }

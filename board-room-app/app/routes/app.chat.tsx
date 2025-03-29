@@ -17,14 +17,16 @@ import { MeetingMessage, MeetingMessageRole, } from "app/meeting/message";
 import { type ListResponse, Ollama, type Tool } from 'ollama';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import styles from '../styles/chat.module.css';
+import styles from '../styles/chat.module.css'
+import '../styles/chat.css'
 import { MeetingMember } from "app/meeting/member";
 import ChatMessage from "app/components/ChatMessage";
 import SidekickListenerInstructions from "app/components/SidekickListenerInstructions";
 import { checkForSidekickListener } from "app/sidekick/message-passing";
 
 // export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
-export const PRODUCT_NAME = "JustAIce LAIgue Chat"
+// export const PRODUCT_NAME = "JustAIce LAIgue Chat"
+export const PRODUCT_NAME = "AIvengers Chat"
 
 interface StoreChatOptions {
   ai: {
