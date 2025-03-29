@@ -1,4 +1,7 @@
 import { TitleBar } from "@shopify/app-bridge-react";
+import type {
+  ScrollableRef
+} from "@shopify/polaris";
 import {
   BlockStack,
   Button,
@@ -16,7 +19,7 @@ import type { StreamingCallback } from "app/meeting/meeting";
 import { Meeting, REAL_USER_LABEL } from "app/meeting/meeting";
 import { MeetingMessage, MeetingMessageRole, } from "app/meeting/message";
 import { type ListResponse, Ollama, type Tool } from 'ollama';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import styles from '../styles/chat.module.css'
 import '../styles/chat.css'
@@ -43,6 +46,17 @@ interface StoreChatOptions {
 export default function ChatPage() {
   const systemMember = new MeetingMember("System", 'system')
   const userMember = new MeetingMember("You", 'user')
+
+  const messagesScrollableRef = useRef<ScrollableRef>(null)
+
+  const scrollToEndOfChatIfDesired = useCallback(() => {
+    if (messagesScrollableRef.current) {
+      // TODO Get the proper end position, but this is good enough for now.
+      messagesScrollableRef.current.scrollTo(2 ** 30, {
+        behavior: 'smooth',
+      })
+    }
+  }, [messagesScrollableRef])
 
   // TODO Load from IndexedDB and allow configuring in the UI.
   const initialOptions: StoreChatOptions = {
@@ -179,12 +193,12 @@ export default function ChatPage() {
     setSuggestions([])
 
     setMessages(prev => [...prev, message])
+    scrollToEndOfChatIfDesired()
 
     const streamingCallback: StreamingCallback = (_message, _newContent) => {
       // TODO Ignore if they're for another meeting that has ended after restarting.
       setMessages([...meeting.chatMessages])
-      // TODO Automatically scroll to the bottom of the messages if already scrolled to the bottom.
-
+      scrollToEndOfChatIfDesired()
     }
 
     try {
@@ -318,14 +332,18 @@ export default function ChatPage() {
 
         <Card>
           <BlockStack gap="300">
-            <Scrollable className={styles.messages} shadow focusable>
+            <Scrollable className={styles.messages}
+              shadow focusable
+              ref={messagesScrollableRef}
+            // TODO Update state to indicate that we should scroll to the bottom.
+            // onScrolledToBottom={...}
+            >
               <BlockStack gap="100">
                 {messages.map((message, index) => (
                   <ChatMessage key={`${index}-${message.content.length}`} message={message} />
                 ))}
               </BlockStack>
             </Scrollable>
-            <Divider />
             {suggestions && <div className={styles.suggestions}>
               <Layout>
                 {suggestions.map((suggestion, index) => {
@@ -340,6 +358,7 @@ export default function ChatPage() {
                 })}
               </Layout>
             </div>}
+            <Divider />
             <TextField
               label=""
               value={message}

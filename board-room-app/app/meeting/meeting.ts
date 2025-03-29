@@ -100,7 +100,7 @@ export class Meeting {
       let responseMessage: MeetingMessage | undefined = undefined
       let hadToolCall = false
       for await (const chunk of response) {
-        console.debug("chunk:", chunk)
+        // console.debug("chunk:", chunk)
         if (chunk.message.tool_calls) {
           hadToolCall = true
           for (const toolCall of chunk.message.tool_calls) {
