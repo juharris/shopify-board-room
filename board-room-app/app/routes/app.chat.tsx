@@ -345,6 +345,10 @@ export default function ChatPage() {
 
         <Card>
           <BlockStack gap="300">
+            <Text as="h2" variant="headingMd">
+              Meeting
+            </Text>
+            <Divider />
             <Scrollable className={styles.messages}
               shadow focusable
               ref={messagesScrollableRef}
