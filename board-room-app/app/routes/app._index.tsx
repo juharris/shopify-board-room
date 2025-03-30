@@ -11,29 +11,30 @@ import {
   InlineStack,
   Page,
   Scrollable,
-  Select,
   Spinner,
   Text,
   TextField,
 } from "@shopify/polaris";
+import { SettingsIcon } from '@shopify/polaris-icons';
 import type { StreamingCallback } from "app/meeting/meeting";
 import { Meeting, REAL_USER_LABEL } from "app/meeting/meeting";
 import { MeetingMessage, MeetingMessageRole, } from "app/meeting/message";
 import { type ListResponse, Ollama, type Tool } from 'ollama';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import styles from '../styles/chat.module.css'
-import '../styles/chat.css'
-import { MeetingMember } from "app/meeting/member";
 import ChatMessage from "app/components/ChatMessage";
 import SidekickListenerInstructions from "app/components/SidekickListenerInstructions";
+import { MeetingMember } from "app/meeting/member";
 import { getInitialSuggestions, getSuggestions } from "app/suggestions/get-suggestions";
+import '../styles/chat.css';
+import styles from '../styles/chat.module.css';
+import AdvancedOptions from "app/components/AdvancedOptions";
 
 // export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
 // export const PRODUCT_NAME = "JustAIce LAIgue Chat"
 export const PRODUCT_NAME = "AIvengers Chat"
 
-interface StoreChatOptions {
+export interface StoreChatOptions {
   ai: {
     ollama: {
       host: string;
@@ -137,7 +138,6 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<MeetingMessage[]>([])
   const [ollamaModels, setOllamaModels] = useState<ListResponse | undefined>(undefined)
   const [options, setOptions] = useState<StoreChatOptions>(initialOptions)
-  const [origin, setOrigin] = useState('*')
   const [suggestions, setSuggestions] = useState<MeetingMessage[]>([])
 
   // TODO Allow changing the host during the meeting.
@@ -171,8 +171,6 @@ export default function ChatPage() {
 
   // Run this once when the page loads.
   useEffect(() => {
-    setOrigin(window.location.origin)
-
     handleRestartMeeting()
 
     fetchOllamaModels()
@@ -238,7 +236,7 @@ export default function ChatPage() {
     }
   }
 
-  function handleModelChange(selected: string, id: string): void {
+  function handleModelChange(selected: string): void {
     options.ai.ollama.model = selected
     setOptions({ ...options })
   }
@@ -262,12 +260,14 @@ export default function ChatPage() {
             </Button>
           )}
           <Button variant='secondary'
+            icon={SettingsIcon}
             pressed={isAdvancedOptionsShown}
             onClick={() => setShowAdvancedOptions(!isAdvancedOptionsShown)}
           >
-            {isAdvancedOptionsShown ? "Hide Advanced Options" : " Advanced Options"}
+
           </Button>
           <Button variant='secondary'
+            pressed={areInternalMessagesShown}
             onClick={() => setAreInternalMessagesShown(!areInternalMessagesShown)}
           >
             {areInternalMessagesShown ? "🙈 Hide Internal Messages" : "👀 Internal Messages"}
@@ -302,44 +302,11 @@ export default function ChatPage() {
         >
           <Card>
             <Scrollable className={styles.options} shadow focusable>
-              <Text as="h2" variant="headingMd">
-                🤓 Advanced Options
-              </Text>
-
-              <Text as="p" variant="bodyMd">
-                To allow requests to your local Ollama server, run:
-              </Text>
-              <pre>OLLAMA_ORIGINS='{origin}' ollama serve</pre>
-
-              {errorLoadingOllamaModels !== undefined && (
-                <Text as="p" variant="bodyMd">
-                  ❌ Error loading list of Ollama models. Ensure that Ollama is running.
-                </Text>
-              )}
-
-              {ollamaModels?.models.length && (
-                <div>
-                  <Text as="p" variant="bodyMd">
-                    ✅ Found models hosted on your local Ollama server.
-                  </Text>
-                  <Select
-                    label="Ollama Model"
-                    options={ollamaModels?.models.map(model => ({ label: model.name, value: model.name })) ?? []}
-                    onChange={handleModelChange}
-                    value={options.ai.ollama.model}
-                  />
-                </div>
-              )}
-
-              {/* <SidekickListenerInstructions /> */}
-
-              {/* TODO Add section for configuring the meeting members. */}
-              < Text as="h3" variant="headingSm">
-                Current Configuration
-              </Text>
-              <pre>
-                {JSON.stringify(options, null, 2)}
-              </pre>
+              <AdvancedOptions
+                handleModelChange={handleModelChange}
+                ollamaModels={ollamaModels}
+                options={options}
+              />
             </Scrollable>
           </Card>
         </Collapsible>

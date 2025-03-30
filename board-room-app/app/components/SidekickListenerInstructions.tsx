@@ -2,9 +2,10 @@ import { useAppBridge } from '@shopify/app-bridge-react'
 import { BlockStack, Button, Collapsible, InlineStack, Text } from '@shopify/polaris'
 import { useCallback, useState } from 'react'
 
+import styles from '../styles/chat.module.css'
+
 const CODE = `
-window.addEventListener("message", (event) => {
-  // console.debug("message", event)
+window.addEventListener('message', (event) => {
   switch (event.data.type) {
     case 'askSidekick':
       const { messageText } = event.data
@@ -13,19 +14,19 @@ window.addEventListener("message", (event) => {
       // TODO Try to send the message.
       event.source.postMessage({
         type: 'askedSidekick'
-      }, "*")
+      }, '*')
       break
     case 'ping':
       event.source.postMessage({
         type: 'pong'
-      }, "*")
+      }, '*')
       break
     default:
       break
   }
 }, false)
 document.querySelector('iframe[title=board-room-app]').contentWindow.postMessage({type: 'pong'}, '*')
-`
+`.trim()
 
 export default function SidekickListenerInstructions() {
   const [open, setOpen] = useState(false)
@@ -41,6 +42,7 @@ export default function SidekickListenerInstructions() {
           onClick={handleToggle}
           ariaExpanded={open}
           ariaControls="basic-collapsible"
+          pressed={open}
         >
           {open ? "Hide code" : "Show code"}
         </Button>
@@ -60,7 +62,7 @@ export default function SidekickListenerInstructions() {
         transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
         expandOnPrint
       >
-        <pre>
+        <pre className={styles.code}>
           {CODE}
         </pre>
       </Collapsible>

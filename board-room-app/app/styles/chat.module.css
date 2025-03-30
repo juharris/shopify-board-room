@@ -19,3 +19,13 @@ details summary {
 div.suggestions {
   min-height: 2.3rem;
 }
+
+pre.code {
+  background-color: #f0f0f0;
+  padding: 1rem;
+
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+
+  width: fit-content;
+}
