@@ -49,15 +49,6 @@ export default function ChatPage() {
 
   const messagesScrollableRef = useRef<ScrollableRef>(null)
 
-  const scrollToEndOfChatIfDesired = useCallback(() => {
-    if (messagesScrollableRef.current) {
-      // TODO Get the proper end position, but this is good enough for now.
-      messagesScrollableRef.current.scrollTo(2 ** 30, {
-        behavior: 'smooth',
-      })
-    }
-  }, [messagesScrollableRef])
-
   // TODO Load from IndexedDB and allow configuring in the UI.
   const initialOptions: StoreChatOptions = {
     ai: {
@@ -132,13 +123,15 @@ export default function ChatPage() {
   }
 
   const [errorLoadingOllamaModels, setErrorLoadingOllamaModels] = useState<unknown | undefined>(undefined)
+  const [isAdvancedOptionsShown, setShowAdvancedOptions] = useState(false)
   const [isSidekickReady, setIsSidekickReady] = useState(false)
+  // TODO Set `isChatScrolledToBottom` to false when the user scrolls up.
+  const [isChatScrolledToBottom, setIsChatScrolledToBottom] = useState(true)
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<MeetingMessage[]>([])
   const [ollamaModels, setOllamaModels] = useState<ListResponse | undefined>(undefined)
   const [options, setOptions] = useState<StoreChatOptions>(initialOptions)
   const [origin, setOrigin] = useState('*')
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false)
   const [suggestions, setSuggestions] = useState<MeetingMessage[]>([])
 
   // TODO Allow changing the host during the meeting.
@@ -185,6 +178,15 @@ export default function ChatPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const scrollToEndOfChatIfDesired = useCallback(() => {
+    if (isChatScrolledToBottom && messagesScrollableRef.current) {
+      // TODO Get the proper end position, but this is good enough for now.
+      messagesScrollableRef.current.scrollTo(2 ** 30, {
+        behavior: 'smooth',
+      })
+    }
+  }, [isChatScrolledToBottom, messagesScrollableRef])
+
   const sendMessage = async (message: string | MeetingMessage) => {
     if (typeof message === 'string') {
       message = new MeetingMessage(MeetingMessageRole.User, message, userMember)
@@ -195,10 +197,12 @@ export default function ChatPage() {
     setMessages(prev => [...prev, message])
     scrollToEndOfChatIfDesired()
 
-    const streamingCallback: StreamingCallback = (_message, _newContent) => {
-      // TODO Ignore if they're for another meeting that has ended after restarting.
-      setMessages([...meeting.chatMessages])
-      scrollToEndOfChatIfDesired()
+    const streamingCallback: StreamingCallback = (meetingId, _message, _newContent) => {
+      // Ignore if they're for another meeting, possibly one that was abandoned.
+      if (meetingId === meeting.id) {
+        setMessages([...meeting.chatMessages])
+        scrollToEndOfChatIfDesired()
+      }
     }
 
     try {
@@ -230,6 +234,10 @@ export default function ChatPage() {
     setOptions({ ...options })
   }
 
+  function handleChatScrolledToBottom(): void {
+    setIsChatScrolledToBottom(true)
+  }
+
   return (
     <Page>
       <TitleBar title={PRODUCT_NAME} />
@@ -248,9 +256,9 @@ export default function ChatPage() {
           </Layout.Section>
           <Layout.Section variant='oneThird'>
             <Button variant='secondary'
-              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+              onClick={() => setShowAdvancedOptions(!isAdvancedOptionsShown)}
             >
-              {showAdvancedOptions ? "Hide Advanced Options" : "🤓 Advanced Options"}
+              {isAdvancedOptionsShown ? "Hide Advanced Options" : "🤓 Advanced Options"}
             </Button>
           </Layout.Section>
 
@@ -281,7 +289,7 @@ export default function ChatPage() {
 
 
         <Collapsible
-          open={showAdvancedOptions}
+          open={isAdvancedOptionsShown}
           transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
           expandOnPrint
           id='advanced-options-collapsible'
@@ -335,8 +343,7 @@ export default function ChatPage() {
             <Scrollable className={styles.messages}
               shadow focusable
               ref={messagesScrollableRef}
-            // TODO Update state to indicate that we should scroll to the bottom.
-            // onScrolledToBottom={...}
+              onScrolledToBottom={() => handleChatScrolledToBottom()}
             >
               <BlockStack gap="100">
                 {messages.map((message, index) => (

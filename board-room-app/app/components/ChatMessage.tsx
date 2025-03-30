@@ -50,12 +50,12 @@ export default function ChatMessage({ message }: Props) {
   if (!contents) {
     switch (role) {
       case MeetingMessageRole.Assistant:
-        contents = (<Text as='p' variant='bodyMd'>
+        contents = (<>
           {/* The message will contain their name or title as a prefix. The model really wanted to do this, probably cause I just tested with a small one (llama3.2:3b).
           So I gave up and told it to do this in the instructions. */}
           {/* <b title={message.from.id}>{message.from.name}</b>: */}
           <Markdown>{content}</Markdown>
-        </Text>)
+        </>)
         break
       case MeetingMessageRole.System:
         summaryText = getSummaryText(content)

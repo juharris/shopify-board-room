@@ -14,6 +14,7 @@ import { getMeetingMessageRole, MeetingMessage, MeetingMessageRole } from './mes
  * @param chunk New text that was appended to the end of the message's content.
  */
 export type StreamingCallback = (
+  meetingId: string,
   message: MeetingMessage | undefined,
   chunk: string | undefined,
 ) => void;
@@ -28,6 +29,7 @@ class HandleToolCallResponse {
 
 export class Meeting {
   private _messages: (MeetingMessage | OllamaMessage)[] = []
+  private _id: string = ''
 
   // eslint-disable-next-line no-useless-constructor
   constructor(
@@ -61,6 +63,10 @@ export class Meeting {
     })
   }
 
+  public get id(): string {
+    return this._id
+  }
+
   public addMessages(messages: MeetingMessage[]) {
     this._messages.push(...messages)
   }
@@ -85,6 +91,7 @@ export class Meeting {
     let nextTools = tools
     let nextSpeaker = "Assistant"
     let hadAssistantMessage = false
+    const meetingId = this._id
     while (++loopCount < maxLoopCount && nextSpeaker !== REAL_USER_LABEL) {
       console.debug("Meeting.generateResponses: loopCount:", loopCount)
       const messages = Meeting.convertMessages(this._messages)
@@ -107,7 +114,7 @@ export class Meeting {
             const handleToolCallResponse = await this.handleToolCall(message, chunk, toolCall)
             nextTools = handleToolCallResponse.nextTools
             nextSpeaker = handleToolCallResponse.nextSpeaker || nextSpeaker
-            cb(responseMessage, undefined)
+            cb(meetingId, responseMessage, undefined)
             if (!hadAssistantMessage && nextSpeaker === REAL_USER_LABEL) {
               // Try force the assistant to respond.
               nextSpeaker = "Assistant"
@@ -128,7 +135,7 @@ export class Meeting {
           } else {
             responseMessage.content += chunk.message.content
           }
-          cb(responseMessage, chunk.message.content)
+          cb(meetingId, responseMessage, chunk.message.content)
         }
 
         // Detect when the model outputs no tools calls and no content, then give control back to the user.
@@ -151,6 +158,7 @@ export class Meeting {
   }
 
   public restart() {
+    this._id = Math.random().toString(36).substring(2)
     this._messages = []
   }
 
@@ -182,7 +190,6 @@ export class Meeting {
     switch (toolCall.function.name) {
       case 'select_next_speaker':
         nextSpeaker = toolCall.function.arguments.speaker
-        console.debug("handleToolCall: nextSpeaker:", nextSpeaker)
         output = `Next speaker: ${nextSpeaker}`
         // We want to let someone else speak, so we should not use a tool next time,
         // also, Ollama will not stream the response if we include tools in the request.
