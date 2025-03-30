@@ -8,24 +8,10 @@
   height: 28rem;
 }
 
-pre.code {
-  word-wrap: break-word;
-}
-
 details summary {
   cursor: pointer;
 }
 
 div.suggestions {
   min-height: 2.3rem;
-}
-
-pre.code {
-  background-color: #f0f0f0;
-  padding: 1rem;
-
-  border: 1px solid #ccc;
-  border-radius: 0.5rem;
-
-  width: fit-content;
 }

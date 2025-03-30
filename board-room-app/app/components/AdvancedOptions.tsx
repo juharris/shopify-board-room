@@ -1,7 +1,9 @@
-import { Select, Text } from '@shopify/polaris';
-import type { StoreChatOptions } from 'app/routes/app._index';
-import type { ListResponse } from 'ollama';
-import { useEffect, useState } from 'react';
+import { BlockStack, Scrollable, Select, Text } from '@shopify/polaris'
+import type { StoreChatOptions } from 'app/routes/app._index'
+import type { ListResponse } from 'ollama'
+import { useEffect, useState } from 'react'
+
+import codeStyles from '../styles/code.module.css'
 
 interface AdvancedOptionsProps {
   handleModelChange: (selected: string) => void;
@@ -22,34 +24,38 @@ export default function AdvancedOptions(
   }, [])
 
   return (<>
-    <Text as="h2" variant="headingMd">
-      🤓 Advanced Options
-    </Text>
+    <BlockStack gap='200'>
+      <Text as="h2" variant="headingMd">
+        🤓 Advanced Options
+      </Text>
 
-    <Text as="p" variant="bodyMd">
-      To allow requests to your local Ollama server, run:
-    </Text>
-    <pre>OLLAMA_ORIGINS='{origin}' ollama serve</pre>
+      <Text as="p" variant="bodyMd">
+        To allow requests to your local Ollama server, run:
+      </Text>
+      <pre>OLLAMA_ORIGINS='{origin}' ollama serve</pre>
 
-    {ollamaModels?.models.length && (
-      <div>
-        <Select
-          label="Ollama Model"
-          options={ollamaModels?.models.map(model => ({ label: model.name, value: model.name })) ?? []}
-          onChange={handleModelChange}
-          value={options.ai.ollama.model}
-        />
-      </div>
-    )}
+      {ollamaModels?.models.length && (
+        <div>
+          <Select
+            label="Ollama Model"
+            options={ollamaModels?.models.map(model => ({ label: model.name, value: model.name })) ?? []}
+            onChange={handleModelChange}
+            value={options.ai.ollama.model}
+          />
+        </div>
+      )}
 
-    {/* <SidekickListenerInstructions /> */}
+      {/* <SidekickListenerInstructions /> */}
 
-    {/* TODO Add section for configuring the meeting members. */}
-    <Text as="h3" variant="headingSm">
-      Current Configuration
-    </Text>
-    <pre>
-      {JSON.stringify(options, null, 2)}
-    </pre>
+      {/* TODO Add section for configuring the meeting members. */}
+      <Text as="h3" variant="headingSm">
+        Current Configuration
+      </Text>
+      <Scrollable focusable>
+        <pre className={codeStyles.code}>
+          {JSON.stringify(options, null, 2)}
+        </pre>
+      </Scrollable>
+    </BlockStack>
   </>)
 }

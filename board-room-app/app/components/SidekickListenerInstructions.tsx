@@ -2,7 +2,7 @@ import { useAppBridge } from '@shopify/app-bridge-react'
 import { BlockStack, Button, Collapsible, InlineStack, Text } from '@shopify/polaris'
 import { useCallback, useState } from 'react'
 
-import styles from '../styles/chat.module.css'
+import codeStyles from '../styles/code.module.css'
 
 const CODE = `
 window.addEventListener('message', (event) => {
@@ -62,7 +62,7 @@ export default function SidekickListenerInstructions() {
         transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
         expandOnPrint
       >
-        <pre className={styles.code}>
+        <pre className={codeStyles.code}>
           {CODE}
         </pre>
       </Collapsible>

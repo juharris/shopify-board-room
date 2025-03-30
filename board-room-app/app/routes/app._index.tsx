@@ -26,7 +26,6 @@ import ChatMessage from "app/components/ChatMessage";
 import SidekickListenerInstructions from "app/components/SidekickListenerInstructions";
 import { MeetingMember } from "app/meeting/member";
 import { getInitialSuggestions, getSuggestions } from "app/suggestions/get-suggestions";
-import '../styles/chat.css';
 import styles from '../styles/chat.module.css';
 import AdvancedOptions from "app/components/AdvancedOptions";
 
@@ -312,8 +311,8 @@ export default function ChatPage() {
         </Collapsible>
 
         <Card>
-          <BlockStack gap="300">
-            <Text as="h2" variant="headingMd">
+          <BlockStack gap='300'>
+            <Text as='h2' variant='headingMd'>
               Meeting
             </Text>
             <Divider />
