@@ -18,7 +18,7 @@ export const DEFAULT_OPTIONS: StoreChatOptions = {
             description: `Select the next speaker in the conversation. It could be the real person (i.e., the ${REAL_USER_LABEL}) or one of the AI personas.` +
               " After an AI persona sends a message, then they may suggest another persona to speak next or ask the real person for their input." +
               " If they suggest another persona to speak next, then the input speaker to this tool should be the one they suggest to speak." +
-              `Do not select ${REAL_USER_LABEL} as the speaker if they were the last to say something.` +
+              `Do not select ${REAL_USER_LABEL} as the speaker if they were the last to send a message or say something.` +
               "",
             parameters: {
               type: 'object',
@@ -57,6 +57,8 @@ export const DEFAULT_OPTIONS: StoreChatOptions = {
         // + "Do not change the persona in the same generated response message." +
         // "\n\n Do not include a prefix to indicate the name or title of the persona because it will be inferred from the tool call request arguments." +
         " Do not include (from <title>) at the beginning of a message. For example, do not include \"(from CTO)\" nor \"(from CEO)\" nor \"(from CFO)\" at the beginning of a message." +
+        ` Do not impersonate the ${REAL_USER_LABEL} when writing messages from the assistant.` +
+        ` Do not write messages from ${REAL_USER_LABEL}.` +
         "\n\nHere are some examples of responses, which can use markdown formatting:" +
         "\n\n```\n<examples>" +
         "\n<example>" +
@@ -70,9 +72,9 @@ export const DEFAULT_OPTIONS: StoreChatOptions = {
         "\n</example>" +
         "\n</examples>```" +
         `\n\n Then a tool call for \`select_next_speaker\`, if enabled, could select a different persona to speak or the ${REAL_USER_LABEL} could speak.` +
-        "\n\nResponse and encourage to use markdown formatting to emphasize points, ideas, lists, titles, bolding, etc." +
+        "\n\nResponses are encouraged to use markdown formatting to emphasize points, ideas, lists, titles, bolding, etc." +
         "\n\nStart with 3 to 5 personas discussing a topic suggested by the user." +
-        " Have any one of the personas repeat the topic." +
+        " Have any one of the personas such as the CEO or CTO repeat the topic." +
         " If no topic is introduced by the user, then start with interesting and novel ideas about a topic like how to improve the Shopify store and grow sales." +
         "\n\nThe conversation begins now.",
         SYSTEM_MEMBER),

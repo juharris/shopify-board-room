@@ -20,7 +20,7 @@ const CANDIDATES: MeetingMessage[] = [
 const INITIAL_SUGGESTIONS = [
   new MeetingMessage(MeetingMessageRole.User, "Let's begin", USER_MEMBER),
   new MeetingMessage(MeetingMessageRole.User, "Let's discuss our marketing strategy", USER_MEMBER),
-  new MeetingMessage(MeetingMessageRole.User, "Let's depose the CEO", USER_MEMBER),
+  new MeetingMessage(MeetingMessageRole.User, "Let's fire the CEO", USER_MEMBER),
   new MeetingMessage(MeetingMessageRole.User, "Let's discuss our product catalog", USER_MEMBER),
   new MeetingMessage(MeetingMessageRole.User, "How should we market our products?", USER_MEMBER),
 ]
