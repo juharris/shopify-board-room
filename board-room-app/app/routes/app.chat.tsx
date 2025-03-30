@@ -12,6 +12,7 @@ import {
   Page,
   Scrollable,
   Select,
+  Spinner,
   Text,
   TextField,
 } from "@shopify/polaris";
@@ -116,7 +117,8 @@ export default function ChatPage() {
           "\n</examples>```" +
           `\n\n Then a tool call for \`select_next_speaker\`, if enabled, could select a different persona to speak or the ${REAL_USER_LABEL} could speak.` +
           "\n\nResponse and encourage to use markdown formatting to emphasize points, ideas, lists, titles, bolding, etc." +
-          "\n\n The conversation begins now. Start with 3 or 4 personas discussing a topic suggested by the user or if not topic is brought up, then start with interesting and novel ideas for how to improve the store and grow sales.",
+          "\n\nStart with 3 or 4 personas discussing a topic suggested by the user or if no topic is introduced by the user, then start with interesting and novel ideas about a topic like how to improve the Shopify store and grow sales." +
+          "\n\nThe conversation begins now.",
           systemMember),
       ],
     },
@@ -124,9 +126,10 @@ export default function ChatPage() {
 
   const [errorLoadingOllamaModels, setErrorLoadingOllamaModels] = useState<unknown | undefined>(undefined)
   const [isAdvancedOptionsShown, setShowAdvancedOptions] = useState(false)
-  const [isSidekickReady, setIsSidekickReady] = useState(false)
   // TODO Set `isChatScrolledToBottom` to false when the user scrolls up.
   const [isChatScrolledToBottom, setIsChatScrolledToBottom] = useState(true)
+  const [isProcessingMessage, setIsProcessingMessage] = useState(false)
+  const [isSidekickReady, setIsSidekickReady] = useState(false)
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<MeetingMessage[]>([])
   const [ollamaModels, setOllamaModels] = useState<ListResponse | undefined>(undefined)
@@ -147,7 +150,9 @@ export default function ChatPage() {
       meeting.addMessages(options.ai.initialMessages)
     }
     setMessages([...meeting.chatMessages])
+    setIsProcessingMessage(false)
     setSuggestions(getInitialSuggestions(3))
+    setIsChatScrolledToBottom(true)
   }, [meeting, options.ai.initialMessages])
 
   const fetchOllamaModels = async () => {
@@ -188,12 +193,12 @@ export default function ChatPage() {
   }, [isChatScrolledToBottom, messagesScrollableRef])
 
   const sendMessage = async (message: string | MeetingMessage) => {
+    setSuggestions([])
+    setIsProcessingMessage(true)
+
     if (typeof message === 'string') {
       message = new MeetingMessage(MeetingMessageRole.User, message, userMember)
     }
-
-    setSuggestions([])
-
     setMessages(prev => [...prev, message])
     scrollToEndOfChatIfDesired()
 
@@ -212,9 +217,11 @@ export default function ChatPage() {
       console.error(error)
       meeting.addMessages([new MeetingMessage(MeetingMessageRole.Assistant, "An error occurred while generating the response. " + error, new MeetingMember("Error", "error"))])
       setMessages([...meeting.chatMessages])
+    } finally {
+      setIsProcessingMessage(false)
+      setSuggestions(getSuggestions(3))
     }
 
-    setSuggestions(getSuggestions(3))
   }
 
   const handleMessageChange = async (value: string) => {
@@ -351,7 +358,8 @@ export default function ChatPage() {
                 ))}
               </BlockStack>
             </Scrollable>
-            {suggestions && <div className={styles.suggestions}>
+            <div className={styles.suggestions}>
+              {isProcessingMessage && <Spinner size="small" />}
               <Layout>
                 {suggestions.map((suggestion, index) => {
                   return (
@@ -364,7 +372,7 @@ export default function ChatPage() {
                   )
                 })}
               </Layout>
-            </div>}
+            </div>
             <Divider />
             <TextField
               label=""

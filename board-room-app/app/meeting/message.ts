@@ -27,8 +27,7 @@ export const getMeetingMessageRole = (role: string): MeetingMessageRole => {
 
 export class MeetingMessage {
   private _id: string = Math.random().toString(36).substring(2)
-
-  public tool_call_id: string | undefined = undefined
+  public isGenerating: boolean = false
 
   // eslint-disable-next-line no-useless-constructor
   public constructor(

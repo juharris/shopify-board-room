@@ -111,10 +111,9 @@ export class Meeting {
         if (chunk.message.tool_calls) {
           hadToolCall = true
           for (const toolCall of chunk.message.tool_calls) {
-            const handleToolCallResponse = await this.handleToolCall(message, chunk, toolCall)
+            const handleToolCallResponse = await this.handleToolCall(meetingId, message, chunk, toolCall, cb)
             nextTools = handleToolCallResponse.nextTools
             nextSpeaker = handleToolCallResponse.nextSpeaker || nextSpeaker
-            cb(meetingId, responseMessage, undefined)
             if (!hadAssistantMessage && nextSpeaker === REAL_USER_LABEL) {
               // Try force the assistant to respond.
               nextSpeaker = "Assistant"
@@ -127,6 +126,7 @@ export class Meeting {
         if (chunk.message.role === 'assistant' && chunk.message.content) {
           if (!responseMessage) {
             responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, chunk.message.content, new MeetingMember(nextSpeaker, nextSpeaker))
+            responseMessage.isGenerating = true
             this._messages.push(responseMessage)
 
             // Reset the tools for the next round.
@@ -154,6 +154,10 @@ export class Meeting {
         //   }
         // }
       }
+
+      if (responseMessage) {
+        responseMessage.isGenerating = false
+      }
     }
   }
 
@@ -174,7 +178,7 @@ export class Meeting {
     })
   }
 
-  private async handleToolCall(message: MeetingMessage, response: ChatResponse, toolCall: ToolCall)
+  private async handleToolCall(meetingId: string, _message: MeetingMessage, response: ChatResponse, toolCall: ToolCall, cb: StreamingCallback)
     : Promise<HandleToolCallResponse> {
     const knownFunctions = ['select_next_speaker']
     if (!knownFunctions.includes(toolCall.function.name)) {
@@ -183,6 +187,7 @@ export class Meeting {
     }
 
     this._messages.push(response.message)
+    cb(meetingId, undefined, undefined)
 
     let output: string | undefined = undefined
     let nextSpeaker: string | undefined = undefined
@@ -209,7 +214,7 @@ export class Meeting {
       content: output,
     }
     this._messages.push(toolResponseMessage)
-
+    cb(this._id, undefined, undefined)
 
     return {
       nextSpeaker,
