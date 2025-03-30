@@ -1,5 +1,5 @@
 import { useAppBridge } from '@shopify/app-bridge-react'
-import { Button, Collapsible, Layout, Text } from '@shopify/polaris'
+import { BlockStack, Button, Collapsible, InlineStack, Text } from '@shopify/polaris'
 import { useCallback, useState } from 'react'
 
 const CODE = `
@@ -32,11 +32,18 @@ export default function SidekickListenerInstructions() {
   const handleToggle = useCallback(() => setOpen((open) => !open), [])
   const shopify = useAppBridge()
   return (
-    <Layout>
-      <Layout.Section>
-        <Text as="p" variant="bodyMd">
-          To include Sidekick in the meeting, run this code in the parent window:
-        </Text>
+    <BlockStack gap='200'>
+      <Text as="p" variant="bodyMd">
+        To include Sidekick in the meeting, run this code in the parent window:
+      </Text>
+      <InlineStack gap='200'>
+        <Button
+          onClick={handleToggle}
+          ariaExpanded={open}
+          ariaControls="basic-collapsible"
+        >
+          {open ? "Hide code" : "Show code"}
+        </Button>
         <Button variant='primary'
           onClick={() => {
             navigator.clipboard.writeText(CODE)
@@ -45,27 +52,18 @@ export default function SidekickListenerInstructions() {
         >
           Copy code
         </Button>
-      </Layout.Section>
-      <Layout.Section>
-        <Button
-          onClick={handleToggle}
-          ariaExpanded={open}
-          ariaControls="basic-collapsible"
-        >
-          {open ? "Hide code" : "Show code"}
-        </Button>
+      </InlineStack>
 
-        <Collapsible
-          open={open}
-          id='sidekick-listener-code-collapsible'
-          transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
-          expandOnPrint
-        >
-          <pre>
-            {CODE}
-          </pre>
-        </Collapsible>
-      </Layout.Section>
-    </Layout>
+      <Collapsible
+        open={open}
+        id='sidekick-listener-code-collapsible'
+        transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
+        expandOnPrint
+      >
+        <pre>
+          {CODE}
+        </pre>
+      </Collapsible>
+    </BlockStack>
   )
 }

@@ -8,7 +8,7 @@ import {
   Card,
   Collapsible,
   Divider,
-  Layout,
+  InlineStack,
   Page,
   Scrollable,
   Select,
@@ -117,14 +117,17 @@ export default function ChatPage() {
           "\n</examples>```" +
           `\n\n Then a tool call for \`select_next_speaker\`, if enabled, could select a different persona to speak or the ${REAL_USER_LABEL} could speak.` +
           "\n\nResponse and encourage to use markdown formatting to emphasize points, ideas, lists, titles, bolding, etc." +
-          "\n\nStart with 3 or 4 personas discussing a topic suggested by the user or if no topic is introduced by the user, then start with interesting and novel ideas about a topic like how to improve the Shopify store and grow sales." +
+          "\n\nStart with 3 to 5 personas discussing a topic suggested by the user." +
+          " Have any one of the personas repeat the topic." +
+          " If no topic is introduced by the user, then start with interesting and novel ideas about a topic like how to improve the Shopify store and grow sales." +
           "\n\nThe conversation begins now.",
           systemMember),
       ],
     },
   }
 
-  const [errorLoadingOllamaModels, setErrorLoadingOllamaModels] = useState<unknown | undefined>(undefined)
+  const [errorLoadingOllamaModels, setErrorLoadingOllamaModels] = useState<unknown>(undefined)
+  const [areInternalMessagesShown, setAreInternalMessagesShown] = useState(false)
   const [isAdvancedOptionsShown, setShowAdvancedOptions] = useState(false)
   // TODO Set `isChatScrolledToBottom` to false when the user scrolls up.
   const [isChatScrolledToBottom, setIsChatScrolledToBottom] = useState(true)
@@ -221,7 +224,6 @@ export default function ChatPage() {
       setIsProcessingMessage(false)
       setSuggestions(getSuggestions(3))
     }
-
   }
 
   const handleMessageChange = async (value: string) => {
@@ -249,51 +251,47 @@ export default function ChatPage() {
     <Page>
       <TitleBar title={PRODUCT_NAME} />
       <BlockStack gap='500'>
-        <Layout>
-          <Layout.Section variant="oneThird">
-            {messages.length > (options.ai.initialMessages?.length ?? 0) ? (
-              <Button onClick={handleRestartMeeting} variant="secondary">
-                🧹 Clear Meeting
-              </Button>
-            ) : (
-              <Button onClick={() => sendMessage("Let's begin.")} variant="primary">
-                🆕 Start Meeting
-              </Button>
-            )}
-          </Layout.Section>
-          <Layout.Section variant='oneThird'>
-            <Button variant='secondary'
-              onClick={() => setShowAdvancedOptions(!isAdvancedOptionsShown)}
-            >
-              {isAdvancedOptionsShown ? "Hide Advanced Options" : "🤓 Advanced Options"}
+        <InlineStack gap='200'>
+          {messages.length > (options.ai.initialMessages?.length ?? 0) ? (
+            <Button onClick={handleRestartMeeting} variant='primary'>
+              🧹 Clear Meeting
             </Button>
-          </Layout.Section>
-
-          {errorLoadingOllamaModels !== undefined && (
-            <Layout.Section variant="fullWidth">
-              <Card>
-                <Text as="p" variant="bodyMd">
-                  ❌ Error loading list of Ollama models. Ensure that Ollama is running.
-                  See the Advanced Options for more information.
-                </Text>
-                <Button onClick={() => fetchOllamaModels()}>Try again</Button>
-              </Card>
-            </Layout.Section>
+          ) : (
+            <Button onClick={() => sendMessage("Let's begin.")} variant='primary'>
+              🆕 Start Meeting
+            </Button>
           )}
+          <Button variant='secondary'
+            onClick={() => setShowAdvancedOptions(!isAdvancedOptionsShown)}
+          >
+            {isAdvancedOptionsShown ? "Hide Advanced Options" : "🤓 Advanced Options"}
+          </Button>
+          <Button variant='secondary'
+            onClick={() => setAreInternalMessagesShown(!areInternalMessagesShown)}
+          >
+            {areInternalMessagesShown ? "🙈 Hide Internal Messages" : "👀 Internal Messages"}
+          </Button>
+        </InlineStack>
 
-          {!isSidekickReady && (
-            <Layout.Section variant="fullWidth">
-              <Card>
-                <Text as="p" variant="bodyMd">
-                  ⚠️ Sidekick is not ready to be used.
-                </Text>
-                {/* <Button onClick={checkForSidekickListener}>Check again</Button> */}
-                <SidekickListenerInstructions />
-              </Card>
-            </Layout.Section>
-          )}
-        </Layout>
+        {errorLoadingOllamaModels !== undefined && (
+          <Card>
+            <Text as="p" variant="bodyMd">
+              ❌ Error loading list of Ollama models. Ensure that Ollama is running.
+              See the Advanced Options for more information.
+            </Text>
+            <Button onClick={() => fetchOllamaModels()}>Try again</Button>
+          </Card>
+        )}
 
+        {!isSidekickReady && (
+          <Card>
+            <Text as="p" variant="bodyMd">
+              ⚠️ Sidekick is not ready to be used.
+            </Text>
+            {/* <Button onClick={checkForSidekickListener}>Check again</Button> */}
+            <SidekickListenerInstructions />
+          </Card>
+        )}
 
         <Collapsible
           open={isAdvancedOptionsShown}
@@ -354,24 +352,21 @@ export default function ChatPage() {
             >
               <BlockStack gap="100">
                 {messages.map((message, index) => (
-                  <ChatMessage key={`${index}-${message.content.length}`} message={message} />
+                  <ChatMessage key={`${index}-${message.content.length}`}
+                    areInternalMessagesShown={areInternalMessagesShown}
+                    message={message} />
                 ))}
               </BlockStack>
             </Scrollable>
             <div className={styles.suggestions}>
               {isProcessingMessage && <Spinner size="small" />}
-              <Layout>
-                {suggestions.map((suggestion, index) => {
-                  return (
-                    <Layout.Section key={index} variant="oneThird">
-                      <Button variant='primary'
-                        onClick={() => sendMessage(suggestion)}>
-                        {suggestion.content}
-                      </Button>
-                    </Layout.Section>
-                  )
-                })}
-              </Layout>
+              <InlineStack gap='200'>
+                {suggestions.map((suggestion, index) => (
+                  <Button key={index} variant='primary'
+                    onClick={() => sendMessage(suggestion)}>
+                    {suggestion.content}
+                  </Button>))}
+              </InlineStack>
             </div>
             <Divider />
             <TextField

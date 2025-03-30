@@ -8,17 +8,17 @@ import Markdown from 'markdown-to-jsx';
 import './../styles/chat-message.css'
 
 type Props = {
-  message: MeetingMessage;
+  areInternalMessagesShown: boolean
+  message: MeetingMessage
 };
 
-export default function ChatMessage({ message }: Props) {
-  // TODO Style messages.
-  // TODO Left align messages from the user.
-  // TODO Right align other messages.
-  // TODO Add advanced option to show tool calls and results and do not show them by default.
-
-
+export default function ChatMessage({ areInternalMessagesShown, message }: Props) {
   const { content, role } = message
+  if (!areInternalMessagesShown &&
+    (role === MeetingMessageRole.System || role === MeetingMessageRole.Tool || message.from.id === 'tool_call')) {
+    return null
+  }
+
   let contents: React.ReactNode
   let summaryText: string | undefined = undefined
   if (['tool_call', 'tool_result'].includes(message.from.id)) {
