@@ -1,7 +1,7 @@
-import { TitleBar } from "@shopify/app-bridge-react";
+import { TitleBar } from "@shopify/app-bridge-react"
 import type {
   ScrollableRef
-} from "@shopify/polaris";
+} from "@shopify/polaris"
 import {
   BlockStack,
   Button,
@@ -14,28 +14,38 @@ import {
   Spinner,
   Text,
   TextField,
-} from "@shopify/polaris";
-import { SettingsIcon } from '@shopify/polaris-icons';
-import type { StreamingCallback } from "app/meeting/meeting";
-import { Meeting } from "app/meeting/meeting";
-import { MeetingMessage, MeetingMessageRole, } from "app/meeting/message";
-import { type ListResponse, Ollama } from 'ollama';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+} from "@shopify/polaris"
+import { SettingsIcon } from '@shopify/polaris-icons'
+import type { StreamingCallback } from "app/meeting/meeting"
+import { Meeting } from "app/meeting/meeting"
+import { MeetingMessage, MeetingMessageRole, } from "app/meeting/message"
+import { type ListResponse, Ollama } from 'ollama'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLoaderData } from "@remix-run/react"
 
-import AdvancedOptions from "app/components/AdvancedOptions";
-import ChatMessage from "app/components/ChatMessage";
-import SidekickListenerInstructions from "app/components/SidekickListenerInstructions";
-import { DEFAULT_OPTIONS } from "app/config/default";
-import type { StoreChatOptions } from "app/config/options";
-import { MeetingMember } from "app/meeting/member";
-import { getInitialSuggestions, getSuggestions } from "app/suggestions/get-suggestions";
-import styles from '../styles/chat.module.css';
+import AdvancedOptions from "app/components/AdvancedOptions"
+import ChatMessage from "app/components/ChatMessage"
+import SidekickListenerInstructions from "app/components/SidekickListenerInstructions"
+import { DEFAULT_OPTIONS, SYSTEM_MEMBER } from "app/config/default"
+import type { StoreChatOptions } from "app/config/options"
+import { MeetingMember } from "app/meeting/member"
+import { getInitialSuggestions, getSuggestions } from "app/suggestions/get-suggestions"
+import styles from '../styles/chat.module.css'
+import type { LoaderFunctionArgs } from "@remix-run/node"
+import { getStoreInfo } from "app/store/info"
 
 // export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
 // export const PRODUCT_NAME = "JustAIce LAIgue Chat"
 export const PRODUCT_NAME = "AIvengers Chat"
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  const storeInfo = await getStoreInfo(request)
+
+  return { storeInfo }
+}
+
 export default function ChatPage() {
+  const { storeInfo } = useLoaderData<typeof loader>()
   const userMember = new MeetingMember("You", 'user')
 
   const messagesScrollableRef = useRef<ScrollableRef>(null)
@@ -68,11 +78,20 @@ export default function ChatPage() {
     if (options.ai.initialMessages) {
       meeting.addMessages(options.ai.initialMessages)
     }
+
+    if (storeInfo) {
+      const storeInfoMessage = new MeetingMessage(
+        MeetingMessageRole.System,
+        `Here is information about the store which can be referenced in the conversation: ${JSON.stringify(storeInfo)}`,
+        SYSTEM_MEMBER
+      )
+      meeting.addMessages([storeInfoMessage])
+    }
     setMessages([...meeting.chatMessages])
     setIsProcessingMessage(false)
     setSuggestions(getInitialSuggestions(3))
     setIsChatScrolledToBottom(true)
-  }, [meeting, options.ai.initialMessages])
+  }, [meeting, options.ai.initialMessages, storeInfo])
 
   const fetchOllamaModels = async () => {
     try {
@@ -145,10 +164,10 @@ export default function ChatPage() {
     // console.debug("handleMessageChange", value);
     if (value.endsWith("\n")) {
       // console.debug("handleMessageChange: Sending message");
-      setMessage("");
-      await sendMessage(value.trimEnd());
+      setMessage("")
+      await sendMessage(value.trimEnd())
     } else {
-      setMessage(value);
+      setMessage(value)
     }
   }
 
@@ -269,5 +288,5 @@ export default function ChatPage() {
         </Card>
       </BlockStack>
     </Page >
-  );
+  )
 }

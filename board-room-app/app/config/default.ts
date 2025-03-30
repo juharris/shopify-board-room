@@ -3,7 +3,7 @@ import { MeetingMember } from 'app/meeting/member'
 import { MeetingMessage, MeetingMessageRole } from 'app/meeting/message'
 import type { StoreChatOptions } from './options'
 
-const systemMember = new MeetingMember('System', 'system')
+export const SYSTEM_MEMBER = new MeetingMember('System', 'system')
 
 export const DEFAULT_OPTIONS: StoreChatOptions = {
   ai: {
@@ -75,7 +75,7 @@ export const DEFAULT_OPTIONS: StoreChatOptions = {
         " Have any one of the personas repeat the topic." +
         " If no topic is introduced by the user, then start with interesting and novel ideas about a topic like how to improve the Shopify store and grow sales." +
         "\n\nThe conversation begins now.",
-        systemMember),
+        SYSTEM_MEMBER),
     ],
   },
 }
