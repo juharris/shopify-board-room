@@ -1,9 +1,9 @@
-import { MeetingMessageRole, type MeetingMessage } from 'app/meeting/message';
+import { MeetingMessageRole, type MeetingMessage } from 'app/meeting/message'
 import {
   Text,
-} from '@shopify/polaris';
-import styles from 'app/styles/chat.module.css';
-import Markdown from 'markdown-to-jsx';
+} from '@shopify/polaris'
+import styles from 'app/styles/chat.module.css'
+import Markdown from 'markdown-to-jsx'
 
 import './../styles/chat-message.css'
 
@@ -95,10 +95,10 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
 }
 
 const getSummaryText = (content: string) => {
-  const maxLength = 60;
+  const maxLength = 60
   if (content.length <= maxLength + 1) {
-    return content;
+    return content
   }
 
-  return content.slice(0, maxLength).trim() + '…';
+  return content.slice(0, maxLength).trim() + '…'
 }

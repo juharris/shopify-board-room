@@ -6,7 +6,7 @@ export interface Product {
 }
 
 export async function getStoreInfo(request: Request) {
-  const { admin } = await shopify.authenticate.admin(request);
+  const { admin } = await shopify.authenticate.admin(request)
 
   const response = await admin.graphql(`
     {
@@ -19,7 +19,7 @@ export async function getStoreInfo(request: Request) {
           description
         }
       }
-    }`);
+    }`)
 
   const { data } = await response.json()
 

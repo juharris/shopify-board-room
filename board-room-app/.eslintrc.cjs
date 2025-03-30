@@ -11,7 +11,6 @@ module.exports = {
     shopify: "readonly",
   },
   rules: {
-    // TODO
-    // semi: ["error", "never"],
+    semi: ["error", "never"],
   },
-};
+}

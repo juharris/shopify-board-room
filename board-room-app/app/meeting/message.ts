@@ -1,4 +1,4 @@
-import type { MeetingMember } from "./member";
+import type { MeetingMember } from "./member"
 
 export enum MeetingMessageRole {
   Assistant = 'assistant',
@@ -38,10 +38,10 @@ export class MeetingMessage {
   }
 
   public get id(): string {
-    return this._id;
+    return this._id
   }
 
   public withContent(content: string): MeetingMessage {
-    return new MeetingMessage(this.role, content, this.from);
+    return new MeetingMessage(this.role, content, this.from)
   }
 }

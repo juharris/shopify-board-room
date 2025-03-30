@@ -1,9 +1,9 @@
-import { vitePlugin as remix } from "@remix-run/dev";
-import { installGlobals } from "@remix-run/node";
-import { defineConfig, type UserConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
+import { vitePlugin as remix } from "@remix-run/dev"
+import { installGlobals } from "@remix-run/node"
+import { defineConfig, type UserConfig } from "vite"
+import tsconfigPaths from "vite-tsconfig-paths"
 
-installGlobals({ nativeFetch: true });
+installGlobals({ nativeFetch: true })
 
 // Related: https://github.com/remix-run/remix/issues/2835#issuecomment-1144102176
 // Replace the HOST env var with SHOPIFY_APP_URL so that it doesn't break the remix server. The CLI will eventually
@@ -13,28 +13,28 @@ if (
   (!process.env.SHOPIFY_APP_URL ||
     process.env.SHOPIFY_APP_URL === process.env.HOST)
 ) {
-  process.env.SHOPIFY_APP_URL = process.env.HOST;
-  delete process.env.HOST;
+  process.env.SHOPIFY_APP_URL = process.env.HOST
+  delete process.env.HOST
 }
 
 const host = new URL(process.env.SHOPIFY_APP_URL || "http://localhost")
-  .hostname;
+  .hostname
 
-let hmrConfig;
+let hmrConfig
 if (host === "localhost") {
   hmrConfig = {
     protocol: "ws",
     host: "localhost",
     port: 64999,
     clientPort: 64999,
-  };
+  }
 } else {
   hmrConfig = {
     protocol: "wss",
     host: host,
     port: parseInt(process.env.FRONTEND_PORT!) || 8002,
     clientPort: 443,
-  };
+  }
 }
 
 export default defineConfig({
@@ -70,4 +70,4 @@ export default defineConfig({
   optimizeDeps: {
     include: ["@shopify/app-bridge-react", "@shopify/polaris"],
   },
-}) satisfies UserConfig;
+}) satisfies UserConfig
