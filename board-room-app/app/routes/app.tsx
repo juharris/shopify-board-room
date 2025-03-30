@@ -8,7 +8,9 @@ import { boundary } from "@shopify/shopify-app-remix/server";
 import { authenticate } from '../shopify.server'
 import { PRODUCT_NAME } from './app._index'
 
-export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
+export const links = () => [
+  { rel: "stylesheet", href: polarisStyles },
+]
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.admin(request);

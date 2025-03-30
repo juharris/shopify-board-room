@@ -1,9 +1,7 @@
 .code {
   background-color: #f0f0f0;
-  padding: 1rem;
-
   border: 1px solid #ccc;
   border-radius: 0.5rem;
-
+  padding: 1rem;
   width: fit-content;
 }
