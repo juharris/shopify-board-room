@@ -59,6 +59,7 @@ export const DEFAULT_OPTIONS: StoreChatOptions = {
         " Do not include (from <title>) at the beginning of a message. For example, do not include \"(from CTO)\" nor \"(from CEO)\" nor \"(from CFO)\" at the beginning of a message." +
         ` Do not impersonate the ${REAL_USER_LABEL} when writing messages from the assistant.` +
         ` Do not write messages from ${REAL_USER_LABEL}.` +
+        " Do not write messages from Sidekick. It is a tool that is used to answer messages from the user or one of the AI personas." +
         "\n\nHere are some examples of responses, which can use markdown formatting:" +
         "\n\n```\n<examples>" +
         "\n<example>" +

@@ -253,7 +253,7 @@ export default function ChatPage() {
             >
               <BlockStack gap="100">
                 {messages.map((message, index) => (
-                  <ChatMessage key={`${index}-${message.content.length}`}
+                  <ChatMessage key={`${index}-${message.role}-${message.content.length}`}
                     areInternalMessagesShown={areInternalMessagesShown}
                     message={message} />
                 ))}

@@ -11,6 +11,8 @@ Sidekick can:
 - Help with domain setup and troubleshooting
 - Find specific resources in your store
 - Guide you to the right pages in your Shopify admin
+
+When the user or an AI persona asks to ask Sidekick, then this tool must be used.
 `.trim()
 
 
