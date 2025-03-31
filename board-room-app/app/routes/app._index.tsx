@@ -36,7 +36,7 @@ import { getStoreInfo } from "app/store/info"
 
 // export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
 // export const PRODUCT_NAME = "JustAIce LAIgue Chat"
-export const PRODUCT_NAME = "AIvengers Chat"
+export const PRODUCT_NAME = "Aivengers Chat"
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const storeInfo = await getStoreInfo(request)
