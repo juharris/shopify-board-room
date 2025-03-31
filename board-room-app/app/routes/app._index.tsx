@@ -15,7 +15,7 @@ import {
   Text,
   TextField,
 } from "@shopify/polaris"
-import { SettingsIcon } from '@shopify/polaris-icons'
+import { ComposeIcon, SendIcon, SettingsIcon } from '@shopify/polaris-icons'
 import type { StreamingCallback } from "app/meeting/meeting"
 import { Meeting } from "app/meeting/meeting"
 import { MeetingMessage, MeetingMessageRole, } from "app/meeting/message"
@@ -53,11 +53,12 @@ export default function ChatPage() {
   // TODO Load from IndexedDB and allow configuring in the UI.
   const initialOptions = useMemo(() => DEFAULT_OPTIONS, [])
 
-  const [errorLoadingOllamaModels, setErrorLoadingOllamaModels] = useState<unknown>(undefined)
   const [areInternalMessagesShown, setAreInternalMessagesShown] = useState(false)
+  const [errorLoadingOllamaModels, setErrorLoadingOllamaModels] = useState<unknown>(undefined)
   const [isAdvancedOptionsShown, setShowAdvancedOptions] = useState(false)
   // TODO Set `isChatScrolledToBottom` to false when the user scrolls up.
   const [isChatScrolledToBottom, setIsChatScrolledToBottom] = useState(true)
+  const [isNewMeeting, setIsNewMeeting] = useState(true)
   const [isProcessingMessage, setIsProcessingMessage] = useState(false)
   const [isSidekickReady, setIsSidekickReady] = useState(false)
   const [message, setMessage] = useState('')
@@ -91,6 +92,7 @@ export default function ChatPage() {
     setIsProcessingMessage(false)
     setSuggestions(getInitialSuggestions(3))
     setIsChatScrolledToBottom(true)
+    setIsNewMeeting(true)
   }, [meeting, options.ai.initialMessages, storeInfo])
 
   const fetchOllamaModels = async () => {
@@ -131,6 +133,7 @@ export default function ChatPage() {
   const sendMessage = async (message: string | MeetingMessage) => {
     setSuggestions([])
     setIsProcessingMessage(true)
+    setIsNewMeeting(false)
 
     if (typeof message === 'string') {
       message = new MeetingMessage(MeetingMessageRole.User, message, userMember)
@@ -184,31 +187,6 @@ export default function ChatPage() {
     <Page>
       <TitleBar title={PRODUCT_NAME} />
       <BlockStack gap='500'>
-        <InlineStack gap='200'>
-          {messages.length > (options.ai.initialMessages?.length ?? 0) ? (
-            <Button onClick={handleRestartMeeting} variant='primary'>
-              🧹 Clear Meeting
-            </Button>
-          ) : (
-            <Button onClick={() => sendMessage("Let's begin.")} variant='primary'>
-              🆕 Start Meeting
-            </Button>
-          )}
-          <Button variant='secondary'
-            icon={SettingsIcon}
-            pressed={isAdvancedOptionsShown}
-            onClick={() => setShowAdvancedOptions(!isAdvancedOptionsShown)}
-          >
-
-          </Button>
-          <Button variant='secondary'
-            pressed={areInternalMessagesShown}
-            onClick={() => setAreInternalMessagesShown(!areInternalMessagesShown)}
-          >
-            {areInternalMessagesShown ? "🙈 Hide Internal Messages" : "👀 Internal Messages"}
-          </Button>
-        </InlineStack>
-
         {errorLoadingOllamaModels !== undefined && (
           <Card>
             <Text as="p" variant="bodyMd">
@@ -238,6 +216,8 @@ export default function ChatPage() {
           <Card>
             <Scrollable className={styles.options} shadow focusable>
               <AdvancedOptions
+                areInternalMessagesShown={areInternalMessagesShown}
+                setAreInternalMessagesShown={setAreInternalMessagesShown}
                 handleModelChange={handleModelChange}
                 ollamaModels={ollamaModels}
                 options={options}
@@ -248,9 +228,23 @@ export default function ChatPage() {
 
         <Card>
           <BlockStack gap='300'>
-            <Text as='h2' variant='headingMd'>
-              Meeting
-            </Text>
+            <InlineStack gap='200' blockAlign="center" >
+              {isNewMeeting ?
+                (<Button icon={SendIcon}
+                  onClick={() => sendMessage("Let's begin.")} variant='primary'>
+                  Start Meeting
+                </Button>)
+                : (<Button icon={ComposeIcon}
+                  onClick={handleRestartMeeting} variant='primary'>
+                  New Meeting
+                </Button>)}
+              <Button variant='secondary'
+                icon={SettingsIcon}
+                pressed={isAdvancedOptionsShown}
+                onClick={() => setShowAdvancedOptions(!isAdvancedOptionsShown)}
+              >
+              </Button>
+            </InlineStack>
             <Divider />
             <Scrollable className={styles.messages}
               shadow focusable
