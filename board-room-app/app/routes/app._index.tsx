@@ -207,25 +207,6 @@ export default function ChatPage() {
           </Card>
         )}
 
-        <Collapsible
-          open={isAdvancedOptionsShown}
-          transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
-          expandOnPrint
-          id='advanced-options-collapsible'
-        >
-          <Card>
-            <Scrollable className={styles.options} shadow focusable>
-              <AdvancedOptions
-                areInternalMessagesShown={areInternalMessagesShown}
-                setAreInternalMessagesShown={setAreInternalMessagesShown}
-                handleModelChange={handleModelChange}
-                ollamaModels={ollamaModels}
-                options={options}
-              />
-            </Scrollable>
-          </Card>
-        </Collapsible>
-
         <Card>
           <BlockStack gap='300'>
             <InlineStack gap='200' blockAlign="center" >
@@ -245,7 +226,25 @@ export default function ChatPage() {
               >
               </Button>
             </InlineStack>
-            <Divider />
+
+            <Collapsible
+              open={isAdvancedOptionsShown}
+              transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
+              expandOnPrint
+              id='advanced-options-collapsible'
+            >
+              <Card>
+                <Scrollable className={styles.options} shadow focusable>
+                  <AdvancedOptions
+                    areInternalMessagesShown={areInternalMessagesShown}
+                    setAreInternalMessagesShown={setAreInternalMessagesShown}
+                    handleModelChange={handleModelChange}
+                    ollamaModels={ollamaModels}
+                    options={options}
+                  />
+                </Scrollable>
+              </Card>
+            </Collapsible>
             <Scrollable className={styles.messages}
               shadow focusable
               ref={messagesScrollableRef}
