@@ -15,6 +15,12 @@ window.addEventListener('message', (event) => {
       event.source.postMessage({
         type: 'askedSidekick'
       }, '*')
+
+      // TODO Wait for the response.
+      event.source.postMessage({
+        type: 'askSidekickResponse',
+        response: "Mocked response"
+      }, '*')
       break
     case 'ping':
       event.source.postMessage({
@@ -25,7 +31,7 @@ window.addEventListener('message', (event) => {
       break
   }
 }, false)
-document.querySelector('iframe[title=board-room-app]').contentWindow.postMessage({type: 'pong'}, '*')
+document.querySelector('iframe[title=Aivengers]').contentWindow.postMessage({type: 'pong'}, '*')
 `.trim()
 
 export default function SidekickListenerInstructions() {

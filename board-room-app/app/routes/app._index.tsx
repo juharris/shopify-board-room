@@ -26,8 +26,9 @@ import { useLoaderData } from "@remix-run/react"
 import AdvancedOptions from "app/components/AdvancedOptions"
 import ChatMessage from "app/components/ChatMessage"
 import SidekickListenerInstructions from "app/components/SidekickListenerInstructions"
-import { DEFAULT_OPTIONS, SYSTEM_MEMBER } from "app/config/default"
+import { SYSTEM_MEMBER } from "app/config/default"
 import type { StoreChatOptions } from "app/config/options"
+import { getOptions, updateOptionsUsingSidekickStatus } from "app/config/options"
 import { MeetingMember } from "app/meeting/member"
 import { getInitialSuggestions, getSuggestions } from "app/suggestions/get-suggestions"
 import styles from '../styles/chat.module.css'
@@ -48,11 +49,6 @@ export default function ChatPage() {
   const { storeInfo } = useLoaderData<typeof loader>()
   const userMember = new MeetingMember("You", 'user')
 
-  const messagesScrollableRef = useRef<ScrollableRef>(null)
-
-  // TODO Load from IndexedDB and allow configuring in the UI.
-  const initialOptions = useMemo(() => DEFAULT_OPTIONS, [])
-
   const [areInternalMessagesShown, setAreInternalMessagesShown] = useState(false)
   const [errorLoadingOllamaModels, setErrorLoadingOllamaModels] = useState<unknown>(undefined)
   const [isAdvancedOptionsShown, setShowAdvancedOptions] = useState(false)
@@ -64,8 +60,10 @@ export default function ChatPage() {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<MeetingMessage[]>([])
   const [ollamaModels, setOllamaModels] = useState<ListResponse | undefined>(undefined)
-  const [options, setOptions] = useState<StoreChatOptions>(initialOptions)
+  const [options, setOptions] = useState<StoreChatOptions>(getOptions(isSidekickReady))
   const [suggestions, setSuggestions] = useState<MeetingMessage[]>([])
+
+  const messagesScrollableRef = useRef<ScrollableRef>(null)
 
   // TODO Allow changing the host during the meeting.
   const client = useMemo(() => new Ollama({
@@ -116,6 +114,8 @@ export default function ChatPage() {
       if (event.data.type === 'pong') {
         console.debug("pong received")
         setIsSidekickReady(true)
+        const newOptions = updateOptionsUsingSidekickStatus(options, true)
+        setOptions(newOptions)
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps

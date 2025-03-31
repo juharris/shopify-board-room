@@ -7,6 +7,7 @@ import {
 } from 'ollama'
 import { MeetingMember } from './member'
 import { getMeetingMessageRole, MeetingMessage, MeetingMessageRole } from './message'
+import { askSidekick } from 'app/sidekick/message-passing'
 
 /**
  * Callback for streaming the response from the AI.
@@ -17,7 +18,7 @@ export type StreamingCallback = (
   meetingId: string,
   message: MeetingMessage | undefined,
   chunk: string | undefined,
-) => void;
+) => void
 
 export const REAL_USER_LABEL = 'real_user'
 
@@ -193,6 +194,10 @@ export class Meeting {
     let nextSpeaker: string | undefined = undefined
     let nextTools: Tool[] | undefined = undefined
     switch (toolCall.function.name) {
+      case 'ask_Shopify_Sidekick':
+        const askSidekickResponse = await askSidekick(toolCall.function.arguments.message)
+        output = askSidekickResponse.response
+        break
       case 'select_next_speaker':
         nextSpeaker = toolCall.function.arguments.speaker
         output = `Next speaker: ${nextSpeaker}`
@@ -200,10 +205,6 @@ export class Meeting {
         // also, Ollama will not stream the response if we include tools in the request.
         nextTools = []
         break
-      // TODO Handle ask_Shopify_Sidekick
-      // case 'ask_Shopify_Sidekick':
-
-      //   break
       default:
         // Won't happen because of the check above for the function name.
         throw new Error(`Unknown tool call: ${toolCall.function.name}`)
