@@ -12,5 +12,5 @@ div.assistant-message {
 
 div.user-message {
   max-width: 88%;
+  padding-left: 0.5rem;
 }
-

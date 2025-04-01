@@ -1,16 +1,33 @@
-import { MeetingMessageRole, type MeetingMessage } from 'app/meeting/message'
 import {
-  Text,
+  Icon,
+  InlineStack,
+  Text
 } from '@shopify/polaris'
+import {
+  MagicIcon,
+  PersonFilledIcon
+} from '@shopify/polaris-icons'
+import { MeetingMessageRole, type MeetingMessage } from 'app/meeting/message'
 import styles from 'app/styles/chat.module.css'
 import Markdown from 'markdown-to-jsx'
 
-import './../styles/chat-message.css'
+import messageStylesUrl from '../styles/chat-message.css?url'
+
+export const links = () => [
+  {
+    rel: 'stylesheet',
+    href: styles,
+  },
+  {
+    rel: 'stylesheet',
+    href: messageStylesUrl,
+  },
+]
 
 type Props = {
   areInternalMessagesShown: boolean
   message: MeetingMessage
-};
+}
 
 export default function ChatMessage({ areInternalMessagesShown, message }: Props) {
   const { content, role } = message
@@ -19,9 +36,12 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
     return null
   }
 
+  let icon: React.ReactNode | undefined = undefined
+
   let contents: React.ReactNode
   let summaryText: string | undefined = undefined
   if (['tool_call', 'tool_result'].includes(message.from.id)) {
+    icon = <Icon source={MagicIcon} tone='base' />
     switch (message.from.id) {
       case 'tool_call':
         try {
@@ -58,6 +78,7 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
         </>)
         break
       case MeetingMessageRole.System:
+        icon = <Icon source={MagicIcon} tone='base' />
         summaryText = getSummaryText(content)
         contents = (<details>
           <summary>
@@ -69,6 +90,7 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
         </details>)
         break
       case MeetingMessageRole.Tool:
+        // icon = <Icon source={MagicIcon} tone='base' />
         contents = (<details>
           <summary>
             <Text as='span' variant='bodyMd'>
@@ -79,6 +101,7 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
         </details>)
         break
       case MeetingMessageRole.User:
+        icon = <Icon source={PersonFilledIcon} tone='base' />
         contents = (<Text as='p' variant='bodyMd'>
           <b title={message.from.id}>{message.from.name}</b>: {content}
         </Text>)
@@ -89,8 +112,11 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
   }
 
   const className = message.from.id === 'tool_call' ? 'tool-message' : `${role}-message`
-  return (<div className={className}>
-    {contents}
+  return (<div className={`${className} ${styles.message}`}>
+    <InlineStack blockAlign='start' gap='200' wrap={false} align='start'>
+      {icon}
+      {contents}
+    </InlineStack>
   </div>)
 }
 

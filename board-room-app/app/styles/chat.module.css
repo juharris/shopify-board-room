@@ -12,6 +12,10 @@ details summary {
   cursor: pointer;
 }
 
+div.message {
+  display: flex;
+}
+
 div.suggestions {
   min-height: 2.3rem;
 }

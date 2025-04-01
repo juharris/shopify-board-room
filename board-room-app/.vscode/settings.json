@@ -4,6 +4,9 @@
     "GraphiQL",
     "ShopifAI"
   ],
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
   "editor.formatOnSave": true,
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",

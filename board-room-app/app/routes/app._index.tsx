@@ -33,11 +33,15 @@ import { getOptions, updateOptionsUsingSidekickStatus } from "app/config/options
 import { MeetingMember } from "app/meeting/member"
 import { getStoreInfo } from "app/store/info"
 import { getInitialSuggestions, getSuggestions } from "app/suggestions/get-suggestions"
+import messageStylesUrl from '../styles/chat-message.css?url'
 import styles from '../styles/chat.module.css'
-
 // export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
 // export const PRODUCT_NAME = "JustAIce LAIgue Chat"
 export const PRODUCT_NAME = "Aivengers Chat"
+
+export const links = () => [
+  { rel: "stylesheet", href: messageStylesUrl },
+]
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const storeInfo = await getStoreInfo(request)
