@@ -2,6 +2,7 @@ import { BlockStack, Button, InlineStack, Scrollable, Select, Text } from '@shop
 import type { ListResponse } from 'ollama'
 import { useEffect, useState } from 'react'
 
+import { useSearchParams } from '@remix-run/react'
 import type { StoreChatOptions } from '../config/options'
 import codeStyles from '../styles/code.module.css'
 
@@ -26,6 +27,7 @@ export default function AdvancedOptions(
     ollamaModels,
     options,
   }: AdvancedOptionsProps) {
+  const [, setSearchParams] = useSearchParams()
   const [origin, setOrigin] = useState('*')
 
   useEffect(() => {
@@ -40,7 +42,18 @@ export default function AdvancedOptions(
       <InlineStack gap='200'>
         <Button variant='secondary'
           pressed={areInternalMessagesShown}
-          onClick={() => setAreInternalMessagesShown(!areInternalMessagesShown)}
+          onClick={() => {
+            const newAreInternalMessagesShown = !areInternalMessagesShown
+            setAreInternalMessagesShown(newAreInternalMessagesShown)
+            setSearchParams(prev => {
+              if (newAreInternalMessagesShown) {
+                prev.set('areInternalMessagesShown', 'true')
+              } else {
+                prev.delete('areInternalMessagesShown')
+              }
+              return prev
+            })
+          }}
         >
           {areInternalMessagesShown ? "🙈 Hide Internal Messages" : "👀 Show Internal Messages"}
         </Button>

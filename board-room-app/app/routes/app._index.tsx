@@ -1,3 +1,4 @@
+import { useLoaderData, useSearchParams } from "@remix-run/react"
 import { TitleBar } from "@shopify/app-bridge-react"
 import type {
   ScrollableRef
@@ -21,8 +22,8 @@ import { Meeting } from "app/meeting/meeting"
 import { MeetingMessage, MeetingMessageRole, } from "app/meeting/message"
 import { type ListResponse, Ollama } from 'ollama'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useLoaderData } from "@remix-run/react"
 
+import type { LoaderFunctionArgs } from "@remix-run/node"
 import AdvancedOptions from "app/components/AdvancedOptions"
 import ChatMessage from "app/components/ChatMessage"
 import SidekickListenerInstructions from "app/components/SidekickListenerInstructions"
@@ -30,10 +31,9 @@ import { SYSTEM_MEMBER } from "app/config/default"
 import type { StoreChatOptions } from "app/config/options"
 import { getOptions, updateOptionsUsingSidekickStatus } from "app/config/options"
 import { MeetingMember } from "app/meeting/member"
+import { getStoreInfo } from "app/store/info"
 import { getInitialSuggestions, getSuggestions } from "app/suggestions/get-suggestions"
 import styles from '../styles/chat.module.css'
-import type { LoaderFunctionArgs } from "@remix-run/node"
-import { getStoreInfo } from "app/store/info"
 
 // export const PRODUCT_NAME = "ShopifAI ConclAIve Chat"
 // export const PRODUCT_NAME = "JustAIce LAIgue Chat"
@@ -49,9 +49,14 @@ export default function ChatPage() {
   const { storeInfo } = useLoaderData<typeof loader>()
   const userMember = new MeetingMember("You", 'user')
 
-  const [areInternalMessagesShown, setAreInternalMessagesShown] = useState(false)
+  // Use URL params to set some options.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const areInternalMessagesShownInitially = searchParams.get('areInternalMessagesShown') === 'true'
+  const areAdvancedOptionsShownInitially = searchParams.get('areAdvancedOptionsShown') === 'true'
+
+  const [areAdvancedOptionsShown, setAreAdvancedOptionsShown] = useState(areAdvancedOptionsShownInitially)
+  const [areInternalMessagesShown, setAreInternalMessagesShown] = useState(areInternalMessagesShownInitially)
   const [errorLoadingOllamaModels, setErrorLoadingOllamaModels] = useState<unknown>(undefined)
-  const [isAdvancedOptionsShown, setShowAdvancedOptions] = useState(false)
   // TODO Set `isChatScrolledToBottom` to false when the user scrolls up.
   const [isChatScrolledToBottom, setIsChatScrolledToBottom] = useState(true)
   const [isNewMeeting, setIsNewMeeting] = useState(true)
@@ -213,7 +218,7 @@ export default function ChatPage() {
               {isNewMeeting ?
                 (<Button icon={SendIcon}
                   onClick={() => sendMessage("Let's begin.")} variant='primary'>
-                  Start Meeting
+                  Aivengers Ensemble!
                 </Button>)
                 : (<Button icon={ComposeIcon}
                   onClick={handleRestartMeeting} variant='primary'>
@@ -221,14 +226,25 @@ export default function ChatPage() {
                 </Button>)}
               <Button variant='secondary'
                 icon={SettingsIcon}
-                pressed={isAdvancedOptionsShown}
-                onClick={() => setShowAdvancedOptions(!isAdvancedOptionsShown)}
+                pressed={areAdvancedOptionsShown}
+                onClick={() => {
+                  const newAreAdvancedOptionsShown = !areAdvancedOptionsShown
+                  setAreAdvancedOptionsShown(newAreAdvancedOptionsShown)
+                  setSearchParams(prev => {
+                    if (newAreAdvancedOptionsShown) {
+                      prev.set('areAdvancedOptionsShown', 'true')
+                    } else {
+                      prev.delete('areAdvancedOptionsShown')
+                    }
+                    return prev
+                  })
+                }}
               >
               </Button>
             </InlineStack>
 
             <Collapsible
-              open={isAdvancedOptionsShown}
+              open={areAdvancedOptionsShown}
               transition={{ duration: '500ms', timingFunction: 'ease-in-out' }}
               expandOnPrint
               id='advanced-options-collapsible'

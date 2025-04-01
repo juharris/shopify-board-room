@@ -21,6 +21,8 @@ export const getOptions = (isSidekickEnabled: boolean): StoreChatOptions => {
 }
 
 export const updateOptionsUsingSidekickStatus = (options: StoreChatOptions, isSidekickEnabled: boolean): StoreChatOptions => {
+  // Deep copy
+  options = JSON.parse(JSON.stringify(options))
   if (isSidekickEnabled) {
     if (!options.ai.ollama.tools) {
       options.ai.ollama.tools = []
@@ -32,6 +34,5 @@ export const updateOptionsUsingSidekickStatus = (options: StoreChatOptions, isSi
     options.ai.ollama.tools = options.ai.ollama.tools?.filter(tool => tool.function.name !== ASK_SIDEKICK_TOOL_CONFIG.function.name)
   }
 
-  // Deep copy the options object.
-  return JSON.parse(JSON.stringify(options))
+  return options
 }

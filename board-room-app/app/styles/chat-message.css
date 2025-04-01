@@ -7,10 +7,10 @@ div.system-message, div.tool-message {
 }
 
 div.assistant-message {
-  margin-left: 20%;
+  margin-left: 12%;
 }
 
 div.user-message {
-  max-width: 80%;
+  max-width: 88%;
 }
 
