@@ -1,11 +1,13 @@
 import {
+  Avatar,
   Icon,
   InlineStack,
   Text
 } from '@shopify/polaris'
 import {
-  MagicIcon,
-  PersonFilledIcon
+  NoteIcon,
+  PersonFilledIcon,
+  WrenchIcon
 } from '@shopify/polaris-icons'
 import { MeetingMessageRole, type MeetingMessage } from 'app/meeting/message'
 import styles from 'app/styles/chat.module.css'
@@ -41,7 +43,7 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
   let contents: React.ReactNode
   let summaryText: string | undefined = undefined
   if (['tool_call', 'tool_result'].includes(message.from.id)) {
-    icon = <Icon source={MagicIcon} tone='base' />
+    icon = <Icon source={WrenchIcon} tone='base' />
     switch (message.from.id) {
       case 'tool_call':
         try {
@@ -70,15 +72,17 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
   if (!contents) {
     switch (role) {
       case MeetingMessageRole.Assistant:
+        icon = getAssistantIcon(message)
         contents = (<>
           {/* The message will contain their name or title as a prefix. The model really wanted to do this, probably cause I just tested with a small one (llama3.2:3b).
           So I gave up and told it to do this in the instructions. */}
           {/* <b title={message.from.id}>{message.from.name}</b>: */}
+          {/* <Markdown>{content}</Markdown> */}
           <Markdown>{content}</Markdown>
         </>)
         break
       case MeetingMessageRole.System:
-        icon = <Icon source={MagicIcon} tone='base' />
+        icon = <Icon source={NoteIcon} tone='base' />
         summaryText = getSummaryText(content)
         contents = (<details>
           <summary>
@@ -90,7 +94,6 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
         </details>)
         break
       case MeetingMessageRole.Tool:
-        // icon = <Icon source={MagicIcon} tone='base' />
         contents = (<details>
           <summary>
             <Text as='span' variant='bodyMd'>
@@ -113,11 +116,44 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
 
   const className = message.from.id === 'tool_call' ? 'tool-message' : `${role}-message`
   return (<div className={`${className} ${styles.message}`}>
-    <InlineStack blockAlign='start' gap='200' wrap={false} align='start'>
+    <InlineStack blockAlign='start' gap='100' wrap={false}>
       {icon}
       {contents}
     </InlineStack>
   </div>)
+}
+
+const getAssistantIcon = (message: MeetingMessage): React.ReactNode => {
+  let icon: React.ReactNode | undefined = undefined
+  switch (message.from.id) {
+    case 'CEO':
+      icon = <Avatar
+        size='md'
+        customer={false}
+        source="https://i.pravatar.cc/150?img=1"
+      />
+      // return <Icon source={PersonFilledIcon} tone='base' />
+      break
+    case 'CTO':
+      // return <Icon source={MagicIcon} tone='base' />
+      icon = <Avatar
+        size='md'
+        customer={false}
+        source="https://i.pravatar.cc/150?img=1"
+      />
+      break
+    default:
+      // return <Icon source={MagicIcon} tone='base' />
+      icon = <Avatar
+        size='md'
+        customer={false}
+        source="https://i.pravatar.cc/150?img=1"
+      />
+      break
+  }
+
+  // Somehow the icons get squished. Maybe it's from one of the stacks somewhere.
+  return <div style={{ width: '2rem', height: '2rem' }}>{icon}</div>
 }
 
 const getSummaryText = (content: string) => {

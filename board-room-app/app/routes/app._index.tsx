@@ -217,7 +217,7 @@ export default function ChatPage() {
         )}
 
         <Card>
-          <BlockStack gap='300'>
+          <BlockStack gap='300' align='start' inlineAlign='start'>
             <InlineStack gap='200' blockAlign="center" >
               {isNewMeeting ?
                 (<Button icon={SendIcon}
@@ -270,7 +270,7 @@ export default function ChatPage() {
               ref={messagesScrollableRef}
               onScrolledToBottom={() => handleChatScrolledToBottom()}
             >
-              <BlockStack gap="100">
+              <BlockStack gap="100" inlineAlign='start'>
                 {messages.map((message, index) => (
                   <ChatMessage key={`${index}-${message.role}-${message.content.length}`}
                     areInternalMessagesShown={areInternalMessagesShown}
