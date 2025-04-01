@@ -1,0 +1,20 @@
+.options {
+  max-height: 70vh;
+  height: 28rem;
+}
+
+.messages {
+  height: 24rem;
+}
+
+details summary {
+  cursor: pointer;
+}
+
+div.message {
+  display: flex;
+}
+
+div.suggestions {
+  min-height: 2rem;
+}
