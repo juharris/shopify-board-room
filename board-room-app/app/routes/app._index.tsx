@@ -217,7 +217,7 @@ export default function ChatPage() {
         )}
 
         <Card>
-          <BlockStack gap='300' align='start' inlineAlign='start'>
+          <BlockStack gap='300'>
             <InlineStack gap='200' blockAlign="center" >
               {isNewMeeting ?
                 (<Button icon={SendIcon}

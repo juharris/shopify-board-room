@@ -31,6 +31,8 @@ type Props = {
   message: MeetingMessage
 }
 
+const iconCache = new Map<string, Number>()
+
 export default function ChatMessage({ areInternalMessagesShown, message }: Props) {
   const { content, role } = message
   if (!areInternalMessagesShown &&
@@ -125,35 +127,22 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
 
 const getAssistantIcon = (message: MeetingMessage): React.ReactNode => {
   let icon: React.ReactNode | undefined = undefined
-  switch (message.from.id) {
-    case 'CEO':
-      icon = <Avatar
-        size='md'
-        customer={false}
-        source="https://i.pravatar.cc/150?img=1"
-      />
-      // return <Icon source={PersonFilledIcon} tone='base' />
-      break
-    case 'CTO':
-      // return <Icon source={MagicIcon} tone='base' />
-      icon = <Avatar
-        size='md'
-        customer={false}
-        source="https://i.pravatar.cc/150?img=1"
-      />
-      break
-    default:
-      // return <Icon source={MagicIcon} tone='base' />
-      icon = <Avatar
-        size='md'
-        customer={false}
-        source="https://i.pravatar.cc/150?img=1"
-      />
-      break
+  const size = 'lg'
+  const seed = message.from.id
+  let id = iconCache.get(seed)
+  if (!id) {
+    id = 1 + Math.floor(Math.random() * 1000000)
+    iconCache.set(seed, id)
   }
+  const avatarUrl = `https://i.pravatar.cc/100?u=${id}`
+  icon = <Avatar
+    size={size}
+    customer={false}
+    source={avatarUrl}
+  />
 
   // Somehow the icons get squished. Maybe it's from one of the stacks somewhere.
-  return <div style={{ width: '2rem', height: '2rem' }}>{icon}</div>
+  return <div style={{ width: '2rem', }}>{icon}</div>
 }
 
 const getSummaryText = (content: string) => {
