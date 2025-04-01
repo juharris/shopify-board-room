@@ -1,3 +1,4 @@
+import { askSidekick } from 'app/sidekick/message-passing'
 import {
   type ChatResponse,
   type Ollama,
@@ -7,7 +8,6 @@ import {
 } from 'ollama'
 import { MeetingMember } from './member'
 import { getMeetingMessageRole, MeetingMessage, MeetingMessageRole } from './message'
-import { askSidekick } from 'app/sidekick/message-passing'
 
 /**
  * Callback for streaming the response from the AI.
@@ -27,6 +27,8 @@ class HandleToolCallResponse {
   nextSpeaker?: string = undefined
   nextTools?: Tool[] = undefined
 }
+
+const PERSONA_START_REGEX = /(?<=\n)(?:\*\*([^\\*]+):\*\*|\*\*([^\\*]+)\*\*:) /
 
 export class Meeting {
   private _messages: (MeetingMessage | OllamaMessage)[] = []
@@ -135,6 +137,21 @@ export class Meeting {
             hadAssistantMessage = true
           } else {
             responseMessage.content += chunk.message.content
+
+            // Detect new persona.
+            const personaMatch = PERSONA_START_REGEX.exec(responseMessage.content)
+            if (personaMatch) {
+              const index = personaMatch.index
+              const newContent: string = responseMessage.content.slice(index)
+              nextSpeaker = personaMatch[1] || personaMatch[2]
+              responseMessage.content = responseMessage.content.slice(0, index)
+              responseMessage.isGenerating = false
+
+              // Make a new message for the persona.
+              responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, newContent, new MeetingMember(nextSpeaker, nextSpeaker))
+              responseMessage.isGenerating = true
+              this._messages.push(responseMessage)
+            }
           }
           cb(meetingId, responseMessage, chunk.message.content)
         }
@@ -157,6 +174,7 @@ export class Meeting {
       }
 
       if (responseMessage) {
+        // console.debug("Meeting.generateResponses: responseMessage:", responseMessage)
         responseMessage.isGenerating = false
       }
     }

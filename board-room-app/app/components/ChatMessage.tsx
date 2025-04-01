@@ -118,7 +118,7 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
 
   const className = message.from.id === 'tool_call' ? 'tool-message' : `${role}-message`
   return (<div className={`${className} ${styles.message}`}>
-    <InlineStack blockAlign='start' gap='100' wrap={false}>
+    <InlineStack blockAlign='start' gap='100' wrap={false} align='center'>
       {icon}
       {contents}
     </InlineStack>
@@ -126,6 +126,7 @@ export default function ChatMessage({ areInternalMessagesShown, message }: Props
 }
 
 const getAssistantIcon = (message: MeetingMessage): React.ReactNode => {
+  // TODO Maybe show something different when message.isGenerating to avoid flashing images, but if it's not an image, then it gets squished as the message gets longer probably because of the stacks.
   let icon: React.ReactNode | undefined = undefined
   const size = 'lg'
   const seed = message.from.id
