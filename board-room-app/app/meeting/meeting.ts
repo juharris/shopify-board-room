@@ -28,7 +28,8 @@ class HandleToolCallResponse {
   nextTools?: Tool[] = undefined
 }
 
-const PERSONA_START_REGEX = /(?<=\n)(?:\*\*([^\\*]+):\*\*|\*\*([^\\*]+)\*\*:) /
+const PERSON_CONTENT_START_PATTERN = /^\s*(?:\*\*([^\\*]+):\*\*|\*\*([^\\*]+)\*\*:) /
+const PERSONA_START_PATTERN = /(?<=\n)(?:\*\*([^\\*]+):\*\*|\*\*([^\\*]+)\*\*:) /
 
 export class Meeting {
   private _messages: (MeetingMessage | OllamaMessage)[] = []
@@ -98,7 +99,7 @@ export class Meeting {
     while (++loopCount < maxLoopCount && nextSpeaker !== REAL_USER_LABEL) {
       console.debug("Meeting.generateResponses: loopCount:", loopCount)
       const messages = Meeting.convertMessages(this._messages)
-      // console.debug("messages:", messages, JSON.stringify(messages))
+      // console.debug("Converted messages:", messages, JSON.stringify(messages))
       console.debug("Meeting.generateResponses: nextTools:", nextTools)
       const response = await this._ollamaClient.chat({
         model: this._nextModel,
@@ -138,19 +139,35 @@ export class Meeting {
           } else {
             responseMessage.content += chunk.message.content
 
-            // Detect new persona.
-            const personaMatch = PERSONA_START_REGEX.exec(responseMessage.content)
-            if (personaMatch) {
-              const index = personaMatch.index
-              const newContent: string = responseMessage.content.slice(index)
-              nextSpeaker = personaMatch[1] || personaMatch[2]
-              responseMessage.content = responseMessage.content.slice(0, index)
-              responseMessage.isGenerating = false
+            // TODO Try to avoid running a regex on every chunk.
 
-              // Make a new message for the persona.
-              responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, newContent, new MeetingMember(nextSpeaker, nextSpeaker))
-              responseMessage.isGenerating = true
-              this._messages.push(responseMessage)
+            // Correct persona.
+            // Cheap check first.
+            if (responseMessage.content.indexOf(':') > -1) {
+              const personaMatch = PERSON_CONTENT_START_PATTERN.exec(responseMessage.content)
+              if (personaMatch) {
+                const persona = personaMatch[1] || personaMatch[2]
+                responseMessage.from.name = persona
+                responseMessage.from.id = persona
+              }
+            }
+
+            // Detect new persona.
+            // Cheap check first.
+            if (responseMessage.content.indexOf('\n') > -1) {
+              const newPersonaMatch = PERSONA_START_PATTERN.exec(responseMessage.content)
+              if (newPersonaMatch) {
+                const index = newPersonaMatch.index
+                const newContent: string = responseMessage.content.slice(index)
+                nextSpeaker = newPersonaMatch[1] || newPersonaMatch[2]
+                responseMessage.content = responseMessage.content.slice(0, index)
+                responseMessage.isGenerating = false
+
+                // Make a new message for the persona.
+                responseMessage = new MeetingMessage(MeetingMessageRole.Assistant, newContent, new MeetingMember(nextSpeaker, nextSpeaker))
+                responseMessage.isGenerating = true
+                this._messages.push(responseMessage)
+              }
             }
           }
           cb(meetingId, responseMessage, chunk.message.content)
@@ -185,9 +202,10 @@ export class Meeting {
     this._messages = []
   }
 
-  private static convertMessages(messages: (MeetingMessage | OllamaMessage)[]): OllamaMessage[] {
+  // Somehow other types of messages get in, maybe it's from a deep copy of the options? So we need to handle `any`.
+  private static convertMessages(messages: (MeetingMessage | OllamaMessage | any)[]): OllamaMessage[] {
     return messages.map(m => {
-      if (m instanceof MeetingMessage) {
+      if (m instanceof MeetingMessage || m.isGenerating !== undefined) {
         return {
           role: m.role,
           content: m.content,
@@ -215,6 +233,7 @@ export class Meeting {
       case 'ask_Shopify_Sidekick':
         const askSidekickResponse = await askSidekick(toolCall.function.arguments.message)
         output = askSidekickResponse.response
+        nextSpeaker = 'Sidekick'
         break
       case 'select_next_speaker':
         nextSpeaker = toolCall.function.arguments.speaker

@@ -130,12 +130,20 @@ const getAssistantIcon = (message: MeetingMessage): React.ReactNode => {
   let icon: React.ReactNode | undefined = undefined
   const size = 'lg'
   const seed = message.from.id
-  let id = iconCache.get(seed)
-  if (!id) {
-    id = 1 + Math.floor(Math.random() * 1000000)
-    iconCache.set(seed, id)
+  let avatarUrl: string
+  switch (seed) {
+    case 'Sidekick':
+      avatarUrl = 'https://cdn.shopify.com/shopifycloud/web/assets/v1/vite/client/en/assets/sidekick-avatar-K_BBe1y-NDai.svg'
+      break
+    default:
+      let id = iconCache.get(seed)
+      if (!id) {
+        id = 1 + Math.floor(Math.random() * 1000000)
+        iconCache.set(seed, id)
+      }
+      avatarUrl = `https://i.pravatar.cc/100?u=${id}`
+      break
   }
-  const avatarUrl = `https://i.pravatar.cc/100?u=${id}`
   icon = <Avatar
     size={size}
     customer={false}

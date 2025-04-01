@@ -1,7 +1,7 @@
 import type { MeetingMessage } from 'app/meeting/message'
+import { ASK_SIDEKICK_TOOL_CONFIG } from 'app/sidekick/ask-sidekick'
 import type { Tool } from 'ollama'
 import { DEFAULT_OPTIONS } from './default'
-import { ASK_SIDEKICK_TOOL_CONFIG } from 'app/sidekick/ask-sidekick'
 
 export interface StoreChatOptions {
   ai: {
@@ -22,7 +22,8 @@ export const getOptions = (isSidekickEnabled: boolean): StoreChatOptions => {
 
 export const updateOptionsUsingSidekickStatus = (options: StoreChatOptions, isSidekickEnabled: boolean): StoreChatOptions => {
   // Deep copy
-  options = JSON.parse(JSON.stringify(options))
+  // Only deep copy what is needed and avoid changing types of messages.
+  options.ai.ollama = JSON.parse(JSON.stringify(options.ai.ollama))
   if (isSidekickEnabled) {
     if (!options.ai.ollama.tools) {
       options.ai.ollama.tools = []

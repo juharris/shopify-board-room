@@ -31,6 +31,7 @@ import { SYSTEM_MEMBER } from "app/config/default"
 import type { StoreChatOptions } from "app/config/options"
 import { getOptions, updateOptionsUsingSidekickStatus } from "app/config/options"
 import { MeetingMember } from "app/meeting/member"
+import { checkForSidekickListener } from "app/sidekick/message-passing"
 import { getStoreInfo } from "app/store/info"
 import { getInitialSuggestions, getSuggestions } from "app/suggestions/get-suggestions"
 import messageStylesUrl from '../styles/chat-message.css?url'
@@ -127,6 +128,8 @@ export default function ChatPage() {
         setOptions(newOptions)
       }
     })
+
+    checkForSidekickListener()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -211,7 +214,6 @@ export default function ChatPage() {
             <Text as="p" variant="bodyMd">
               ⚠️ Sidekick is not ready to be used.
             </Text>
-            {/* <Button onClick={checkForSidekickListener}>Check again</Button> */}
             <SidekickListenerInstructions />
           </Card>
         )}
@@ -266,7 +268,7 @@ export default function ChatPage() {
               </Card>
             </Collapsible>
             <Scrollable className={styles.messages}
-              shadow focusable
+              focusable
               ref={messagesScrollableRef}
               onScrolledToBottom={() => handleChatScrolledToBottom()}
             >
