@@ -79,6 +79,13 @@ export const DEFAULT_OPTIONS: StoreChatOptions = {
         " If no topic is introduced by the user, then start with interesting and novel ideas about a topic like how to improve the Shopify store and grow sales." +
         "\n\nThe conversation begins now.",
         SYSTEM_MEMBER),
+      // TEMP FOR TESTING
+      /*
+      new MeetingMessage(MeetingMessageRole.User, "Let's begin.", new MeetingMember('User', 'user')),
+      new MeetingMessage(MeetingMessageRole.Assistant, "**CEO:** I **declare** that we need to use AI more in our strategy to figure out how to manage our Shopify store. I would like to hear from the CTO how we can do that.", new MeetingMember('CEO', 'CEO')),
+      new MeetingMessage(MeetingMessageRole.Assistant, "**CTO:** Short message.", new MeetingMember('CTO', 'CTO')),
+      new MeetingMessage(MeetingMessageRole.Assistant, "**CFO:** Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", new MeetingMember('CFO', 'CFO')),
+      */
     ],
   },
 }

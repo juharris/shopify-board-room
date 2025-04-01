@@ -19,7 +19,7 @@ window.addEventListener('message', (event) => {
       // TODO Wait for the response.
       event.source.postMessage({
         type: 'askSidekickResponse',
-        response: "Mocked response"
+        response: "I'll get back to you tomorrow!"
       }, '*')
       break
     case 'ping':

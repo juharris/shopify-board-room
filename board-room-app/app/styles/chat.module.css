@@ -4,8 +4,7 @@
 }
 
 .messages {
-  max-height: 50vh;
-  height: 26rem;
+  height: 24rem;
 }
 
 details summary {
